@@ -26,13 +26,33 @@ RenderWindow.prototype.setLogicalSize = function(size) {
 	this.back_.setSize(size);
 }
 
-RenderWindow.prototype.getLogicalSize = function() {
-	return this.front_.getSize();
+/**
+ * - void getLogicalSize(Vector2 &size)
+ * - Vector2 getLogicalSize()
+ */
+RenderWindow.prototype.getLogicalSize = function(size) {
+	if (size && size instanceof Vector2) {
+		this.front_.getSize(size);
+	}
+	else {
+		return this.front_.getSize();
+	}
 }
 
-RenderWindow.prototype.getSize = function() {
+/**
+ * - void getSize(Vector2 &size)
+ * - Vector2 getSize()
+ */
+RenderWindow.prototype.getSize = function(size) {
 	var $canvas = $(this.front_.getCanvas());
-	return new Vector2($canvas.width(), $canvas.height());
+
+	if (size && size instanceof Vector2) {
+		size.x = $canvas.width();
+		size.y = $canvas.height();
+	}
+	else {
+		return new Vector2($canvas.width(), $canvas.height());
+	}
 }
 
 RenderWindow.prototype.onResize = function(resizeCallback, owner) {
