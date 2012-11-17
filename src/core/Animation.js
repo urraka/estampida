@@ -5,11 +5,11 @@ function Animation() {
 	this.time_ = 0;
 }
 
-Animation.prototype.set = function(id) {
+Animation.prototype.set = function(id, frame) {
 	if (id in Resources.animations) {
 		this.id_ = id;
 		this.currentAnimation_ = Resources.animations[id];
-		this.currentFrame_ = 0;
+		this.currentFrame_ = frame || 0;
 		this.time_ = 0;
 	}
 }

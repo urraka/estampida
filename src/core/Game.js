@@ -44,9 +44,9 @@ Game.prototype.mainLoop = function() {
 
 		fpsTime += frameTime;
 
-		if (fpsTime >= 2000) {
-			fpsTime -= 2000;
-			self.fps_ = Math.round(fpsCount / 2);
+		if (fpsTime >= 1000) {
+			fpsTime -= 1000;
+			self.fps_ = fpsCount;
 			fpsCount = 0;
 		}
 

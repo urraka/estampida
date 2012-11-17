@@ -38,3 +38,16 @@ Rectangle.prototype.intersects = function(rc) {
 
 	return false;
 }
+
+Rectangle.prototype.expand = function(rc) {
+	var right = Math.max(this.left + this.width, rc.left + rc.width);
+	var bottom = Math.max(this.top + this.height, rc.top + rc.height);
+
+	this.left = Math.min(this.left, rc.left);
+	this.top = Math.min(this.top, rc.top);
+
+	this.width = right - this.left;
+	this.height = bottom - this.top;
+
+	return this;
+}
