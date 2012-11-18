@@ -26,6 +26,10 @@
 <body>
 	<div></div>
 	<script type="text/javascript">
+		$(document).bind("touchmove", function(e) {
+			e.preventDefault();
+		});
+
 		$(window).load(function() {
 			estampida = new Estampida();
 			estampida.start($("body > div")[0]);

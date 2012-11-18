@@ -72,5 +72,5 @@ RenderWindow.prototype.getContext = function() {
 }
 
 RenderWindow.prototype.display = function() {
-	this.front_.getContext().drawImage(this.back_.getCanvas(), 0, 0)
+	this.front_.getContext().drawImage(this.back_.getCanvas(), 0, 0);
 }
