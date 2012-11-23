@@ -51,3 +51,10 @@ Rectangle.prototype.expand = function(rc) {
 
 	return this;
 }
+
+Rectangle.prototype.containsxy = function(x, y) {
+	return x >= this.left &&
+           x <= this.left + this.width &&
+           y >= this.top &&
+           y <= this.top + this.height;
+}

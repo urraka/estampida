@@ -16,6 +16,9 @@ function Game() {
 
 Game.prototype.start = function(element) {
 	this.renderWindow_.create(element);
+
+	Keyboard.initialize();
+	
 	this.initialize();
 	this.mainLoop();
 }

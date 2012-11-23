@@ -2,8 +2,34 @@ Keyboard = {};
 
 Keyboard.state_ = [];
 
+Keyboard.initialize = function() {
+	Keyboard.state_.length = 256;
+
+	for (i in Keyboard.state_) {
+		Keyboard.state_[i] = false;
+	}
+
+	$(window).keydown(function(e) {
+		Keyboard.state_[e.which] = true;
+	});
+
+	$(window).keyup(function(e) {
+		Keyboard.state_[e.which] = false;
+	});
+}
+
 Keyboard.isKeyPressed = function(key) {
 	return Keyboard.state_[key] === true;
+}
+
+Keyboard.bind = function(owner, callback) {
+	$(window).keydown(function(e) {
+		callback.call(owner, e.which, true);
+	});
+
+	$(window).keyup(function(e) {
+		callback.call(owner, e.which, false);
+	});
 }
 
 Keyboard.Cancel = 3;
@@ -121,19 +147,3 @@ Keyboard.BackSlash = 220;
 Keyboard.CloseBracket = 221;
 Keyboard.Quote = 222;
 Keyboard.Meta = 224;
-
-$(function() {
-	Keyboard.state_.length = 256;
-
-	for (i in Keyboard.state_) {
-		Keyboard.state_[i] = false;
-	}
-
-	$(window).keydown(function(e) {
-		Keyboard.state_[e.which] = true;
-	});
-
-	$(window).keyup(function(e) {
-		Keyboard.state_[e.which] = false;
-	});
-});

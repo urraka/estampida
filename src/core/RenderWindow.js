@@ -55,14 +55,14 @@ RenderWindow.prototype.getSize = function(size) {
 	}
 }
 
-RenderWindow.prototype.onResize = function(resizeCallback, owner) {
+RenderWindow.prototype.onResize = function(owner, callback) {
 	var self = this;
 
 	$(window).resize(function() {
 		var sz = self.getSize();
 		if (!self.currentSize_.equals(sz)) {
 			self.currentSize_.assign(sz);
-			resizeCallback.call(owner, sz);
+			callback.call(owner, sz);
 		}
 	});
 }

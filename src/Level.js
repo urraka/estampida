@@ -35,9 +35,11 @@ Level.prototype.draw = function(context) {
 	context.fillRect(0, 0, this.viewRect_.width, this.viewRect_.height);
 
 	context.translate(-Math.floor(this.viewRect_.left), -Math.floor(this.viewRect_.top));
-
 	this.map.draw(context, this.viewRect_);
 	this.player.draw(context);
+
+	context.translate(Math.floor(this.viewRect_.left), Math.floor(this.viewRect_.top));
+	Controller.draw(context);
 	
 	context.restore();
 }

@@ -13,7 +13,7 @@ Estampida.prototype.initialize = function() {
 	var size = renderWindow.getSize();
 
 	renderWindow.setLogicalSize(size);
-	renderWindow.onResize(this.windowResize, this);
+	renderWindow.onResize(this, this.windowResize);
 
 	this.showFps(true);
 	this.setState(new Loading());
@@ -21,13 +21,17 @@ Estampida.prototype.initialize = function() {
 	var imagesInfo = [
 		{ id: "perro", src: "images/perro.png" },
 		{ id: "map", src: "images/map.png" },
-		{ id: "mapTexture", src: "images/SandyHopscotch.png" }
+		{ id: "mapTexture", src: "images/SandyHopscotch.png" },
+		{ id: "controller", src: "images/controller.png" }
 	];
 
 	var loadedCount = 0;
 
 	function loadCheck() {
 		if (++loadedCount === imagesInfo.length) {
+			Controller.initialize();
+			Controller.updateViewSize(size);
+			
 			self.level_ = new Level();
 			self.level_.updateViewSize(self.getRenderWindow().getLogicalSize());
 			self.level_.loadMap("map");
@@ -73,7 +77,10 @@ Estampida.prototype.initialize = function() {
 
 Estampida.prototype.windowResize = function(size) {
 	this.getRenderWindow().setLogicalSize(size);
+
 	if (this.level_) {
 		this.level_.updateViewSize(size);
 	}
+
+	Controller.updateViewSize(size);
 }

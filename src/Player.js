@@ -149,20 +149,16 @@ Player.prototype.checkMapCollision = function() {
 			}
 
 			if (current === "x") {
-				if (this.position_.x - this.previousPosition_.x > 0) {
+				if (this.position_.x - this.previousPosition_.x > 0)
 					this.collides_.right = true;
-				}
-				else {
+				else
 					this.collides_.left = true;
-				}
 			}
 			else {
-				if (this.position_.y - this.previousPosition_.y > 0) {
+				if (this.position_.y - this.previousPosition_.y > 0)
 					this.collides_.bottom = true;
-				}
-				else {
+				else
 					this.collides_.top = true;
-				}
 			}
 
 			if (pos.coord(current) === Math.floor(pos.coord(current))) {
