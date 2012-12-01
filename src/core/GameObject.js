@@ -39,5 +39,5 @@ GameObject.prototype.getPosition = function() {
 }
 
 GameObject.prototype.getVelocity = function() {
-	return this.position_;
+	return this.velocity_;
 }

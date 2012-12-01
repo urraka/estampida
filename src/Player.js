@@ -29,7 +29,7 @@ Player.prototype.initialize = function(map) {
 }
 
 Player.prototype.update = function(dt) {
-	this.previousPosition_.assign(this.position_);
+	this.previousPosition_.assignv(this.position_);
 
 	var kWalkAcc = 800;
 	var kMaxWalkVel = 250;
@@ -39,16 +39,16 @@ Player.prototype.update = function(dt) {
 	this.velocity_.x = 0;
 	this.acceleration_.assign(0, kGravity);
 
-	if (Keyboard.isKeyPressed(Keyboard.Left)) {
+	if (Controller.isPressed(Controller.Left)) {
 		this.velocity_.x = -kMaxWalkVel;
 		this.flipX_ = false;
 	}
-	else if (Keyboard.isKeyPressed(Keyboard.Right)) {
+	else if (Controller.isPressed(Controller.Right)) {
 		this.velocity_.x = kMaxWalkVel;
 		this.flipX_ = true;
 	}
 
-	if (this.collides_.bottom && Keyboard.isKeyPressed(Keyboard.Up)) {
+	if (this.collides_.bottom && Controller.isPressed(Controller.Jump)) {
 		this.velocity_.y = -kJumpVel;
 	}
 
@@ -109,7 +109,7 @@ Player.prototype.checkMapCollision = function() {
 	var prevPos = this.checkMapCollisionVars_.prevPos;
 	var delta   = this.checkMapCollisionVars_.delta;
 
-	delta.assignVector(this.position_).subtractVector(this.previousPosition_);
+	delta.assignv(this.position_).subtractv(this.previousPosition_);
 
 	var fast = "x";
 	var slow = "y";
@@ -122,9 +122,9 @@ Player.prototype.checkMapCollision = function() {
 	delta.assignCoord(slow, delta.coord(slow) / Math.abs(delta.coord(fast)));
 	delta.assignCoord(fast, delta.coord(fast) > 0 ? 1 : (delta.coord(fast) < 0 ? -1 : 0));
 
-	pos.assignVector(this.previousPosition_);
+	pos.assignv(this.previousPosition_);
 
-	while (!pos.equalsVector(this.position_)) {
+	while (!pos.equalsv(this.position_)) {
 		for (var i = 0; i < 2; i++) {
 			var current = (i == 0 ? fast : slow);
 			var other = (i == 0 ? slow : fast);
@@ -133,7 +133,7 @@ Player.prototype.checkMapCollision = function() {
 				continue;
 			}
 
-			prevPos.assignVector(pos);
+			prevPos.assignv(pos);
 
 			if (Math.abs(this.position_.coord(current) - pos.coord(current)) <= Math.abs(delta.coord(current))) {
 				pos.assignCoord(current, this.position_.coord(current));

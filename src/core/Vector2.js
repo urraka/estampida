@@ -21,12 +21,12 @@ Vector2.prototype.assignCoord = function(which, value) {
  */
 Vector2.prototype.equals = function(x, y) {
 	if (x instanceof Vector2)
-		return this.equalsVector(x);
+		return this.equalsv(x);
 	else
 		return this.equalsxy(x, y);
 }
 
-Vector2.prototype.equalsVector = function(vector) {
+Vector2.prototype.equalsv = function(vector) {
 	return this.x === vector.x && this.y === vector.y;
 }
 
@@ -40,12 +40,12 @@ Vector2.prototype.equalsxy = function(x, y) {
  */
 Vector2.prototype.assign = function(x, y) {
 	if (x instanceof Vector2)
-		return this.assignVector(x);
+		return this.assignv(x);
 	else
 		return this.assignxy(x, y);
 }
 
-Vector2.prototype.assignVector = function(vector) {
+Vector2.prototype.assignv = function(vector) {
 	this.x = vector.x;
 	this.y = vector.y;
 	return this;
@@ -63,12 +63,12 @@ Vector2.prototype.assignxy = function(x, y) {
  */
 Vector2.prototype.add = function(x, y) {
 	if (x instanceof Vector2)
-		return this.addVector(x);
+		return this.addv(x);
 	else
 		return this.addxy(x, y);
 }
 
-Vector2.prototype.addVector = function(vector) {
+Vector2.prototype.addv = function(vector) {
 	this.x += vector.x;
 	this.y += vector.y;
 	return this;
@@ -86,12 +86,12 @@ Vector2.prototype.addxy = function(x, y) {
  */
 Vector2.prototype.subtract = function(x, y) {
 	if (x instanceof Vector2)
-		return this.subtractVector(x);
+		return this.subtractv(x);
 	else
 		return this.subtractxy(x, y);
 }
 
-Vector2.prototype.subtractVector = function(vector) {
+Vector2.prototype.subtractv = function(vector) {
 	this.x -= vector.x;
 	this.y -= vector.y;
 	return this;
@@ -106,21 +106,43 @@ Vector2.prototype.subtractxy = function(x, y) {
 Vector2.prototype.multiply = function(scalar) {
 	this.x *= scalar;
 	this.y *= scalar;
-
 	return this;
 }
 
-
-// static methods
-
-Vector2.add = function(a, b) {
-	return new Vector2(a.x, a.y).add(b);
+Vector2.prototype.magnitude = function() {
+	return Math.sqrt(this.x * this.x + this.y * this.y);
 }
 
-Vector2.subtract = function(a, b) {
-	return new Vector2(a).subtract(b);
+Vector2.prototype.normalize = function() {
+	var mag = this.magnitude();
+	return this.assignxy(this.x / mag, this.y / mag);
 }
 
-Vector2.multiply = function(a, scalar) {
-	return new Vector2(a).multiply(scalar);
+Vector2.prototype.dot = function(x, y) {
+	if (x instanceof Vector2)
+		return this.dotv(x);
+	else
+		return this.dotxy(x, y);
+}
+
+Vector2.prototype.dotv = function(vector) {
+	return this.x * vector.x + this.y * vector.y;
+}
+
+Vector2.prototype.dotxy = function(x, y) {
+	return this.x * x + this.y * y;
+}
+
+// assumes the vector is normalized
+Vector2.prototype.angle = function() {
+	var angle = Math.asin(this.y);
+
+	if (this.x < 0 && this.y >= 0)
+		angle = Math.PI - angle;
+	else if (this.x <= 0 && this.y < 0)
+		angle = Math.PI + Math.abs(angle);
+	else if (this.x > 0 && this.y < 0)
+		angle = Math.PI * 2 - Math.abs(angle);
+
+	return angle;
 }

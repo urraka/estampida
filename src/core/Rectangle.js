@@ -58,3 +58,51 @@ Rectangle.prototype.containsxy = function(x, y) {
            y >= this.top &&
            y <= this.top + this.height;
 }
+
+Rectangle.prototype.intersectsLine = function(p1, p2) {
+    var minX = p1.x;
+    var maxX = p2.x;
+    
+    if (p1.x > p2.x) {
+        minX = p2.x;
+        maxX = p1.x;
+    }
+    
+    if (maxX > this.left + this.width)
+        maxX = this.left + this.width;
+    
+    if (minX < this.left)
+        minX = this.left;
+    
+    if (minX > maxX)
+        return false;
+    
+    var minY = p1.y;
+    var maxY = p2.y;
+    
+    var dx = p2.x - p1.x;
+    
+    if (Math.abs(dx) > kEpsilon) {
+        var a = (p2.y - p1.y) / dx;
+        var b = p1.y - a * p1.x;
+        minY = a * minX + b;
+        maxY = a * maxX + b;
+    }
+    
+    if (minY > maxY) {
+        var tmp = maxY;
+        maxY = minY;
+        minY = tmp;
+    }
+    
+    if (maxY > this.top + this.height)
+        maxY = this.top + this.height;
+    
+    if (minY < this.top)
+        minY = this.top;
+    
+    if (minY > maxY)
+        return false;
+    
+    return true;
+}
