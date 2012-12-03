@@ -41,7 +41,7 @@ Game.prototype.mainLoop = function() {
 
 	self.currentState_.update(self.dt_ / 1000);
 
-	function tick() {
+	function frame() {
 		var newTime = Date.now();
 		var frameTime = newTime - currentTime;
 
@@ -85,10 +85,10 @@ Game.prototype.mainLoop = function() {
 
 		fpsCount++;
 
-		self.requestAnimationFrame.call(window, tick);
+		self.requestAnimationFrame.call(window, frame);
 	}
 
-	tick();
+	frame();
 }
 
 Game.prototype.setState = function(state) {

@@ -36,6 +36,8 @@ Map2.prototype.draw = function(context) {
 
 	var line = new Line();
 	var midpoint = new Vector2();
+	//var rc = new Rectangle();
+	//var bounds = new Rectangle(this.lineStrips[0][0].x, this.lineStrips[0][0].y, 0, 0);
 
 	context.save();
 
@@ -65,8 +67,15 @@ Map2.prototype.draw = function(context) {
 			context.moveTo(midpoint.x, midpoint.y);
 			context.lineTo(line.normal.x, line.normal.y);
 			context.stroke();
+
+			//line.getBounds(rc);
+			//bounds.expand(rc);
+			//context.strokeRect(rc.left, rc.top, rc.width, rc.height);
 		}
 	}
+
+	//context.strokeStyle = "#FFF";
+	//context.strokeRect(bounds.left, bounds.top, bounds.width, bounds.height);
 
 	context.restore();
 }

@@ -83,3 +83,12 @@ Line.prototype.intersection = function(line, result) {
 
 	return result.assignxy(x, y);
 }
+
+Line.prototype.getBounds = function(result) {
+	if (!result) result = new Rectangle();
+	result.left   = Math.min(this.p1.x, this.p2.x);
+	result.top    = Math.min(this.p1.y, this.p2.y);
+	result.width  = Math.abs(this.p2.x - this.p1.x);
+	result.height = Math.abs(this.p2.y - this.p1.y);
+	return result;
+}

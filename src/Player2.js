@@ -3,10 +3,12 @@ Player2.prototype = new GameObject();
 function Player2() {
 	GameObject.call(this);
 	this.map_ = null;
+	this.world_ = null;
 	this.rc_ = new Rectangle();
 	this.color_ = "rgba(255, 255, 0, 0.5)";
-	this.moveResult_ = new Physics.Result();
+	this.moveResult_ = new Physics.MoveResult();
 	this.dest_ = new Vector2();
+	this.floorLine_ = null;
 
 	this.position_.assignxy(400, 450);
 	this.origin_.assignxy(26, 80);
@@ -33,26 +35,13 @@ Player2.prototype.update = function(dt) {
 	}
 
 	this.dest_.assignv(this.position_).addxy(this.velocity_.x * dt, this.velocity_.y * dt);
-	Physics.move(this.map_, this, this.dest_, this.moveResult_);
+	this.world_.moveObject(this, this.dest_, this.moveResult_);
 	this.position_.assignv(this.moveResult_.position);
 
-	if (this.moveResult_.collisionSegment.hasLength())
+	if (this.moveResult_.collisionLine)
 		this.color_ = "rgba(255, 0, 0, 0.5)";
 	else
 		this.color_ = "rgba(255, 255, 0, 0.5)";
-
-	/*
-	this.position_.add(this.velocity_.x * dt, this.velocity_.y * dt);
-
-	this.getBoundingRect(this.position_, this.rc_);
-
-	if (this.map_.checkCollision(this.rc_)) {
-		this.color_ = "rgba(255, 0, 0, 0.5)";
-	}
-	else {
-		this.color_ = "rgba(255, 255, 0, 0.5)";
-	}
-	*/
 }
 
 Player2.prototype.draw = function(context) {
