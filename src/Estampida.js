@@ -2,7 +2,6 @@ Estampida.prototype = new Game();
 
 function Estampida() {
 	Game.call(this);
-
 	this.level_ = null;
 }
 

@@ -7,6 +7,7 @@ Physics.WorldLine = function(p1, p2) {
 	this.previous = null;
 	this.next = null;
 	this.isFloor = false;
+	this.flag = false; // if flagged color will change (for debugging)
 }
 
 Physics.WorldLine.prototype = new Line();
@@ -74,15 +75,13 @@ Physics.World.prototype.getTreeIndexMax_ = function(bounds) {
 }
 
 Physics.World.prototype.addLineStrip = function(points) {
+	var locals = this.locals_.addLineStrip || (this.locals_.addLineStrip = {
+		rc: new Rectangle(),
+		vi: new Vector2(0, -1)
+	});
+
 	if (points.length <= 1)
 		return;
-
-	if (!this.locals_.addLineStrip) {
-		this.locals_.addLineStrip = {
-			rc: new Rectangle(),
-			vi: new Vector2(0, -1)
-		};
-	}
 
 	var locals = this.locals_.addLineStrip;
 	var nPoints = points.length;
@@ -104,11 +103,11 @@ Physics.World.prototype.addLineStrip = function(points) {
 
 		prevLine = currentLine;
 
-		// add to quadTress
+		// add to quadTrees
 
-		currentLine.getBounds(locals.rc);
-		var iTreeMin = this.getTreeIndexMin_(locals.rc);
-		var iTreeMax = this.getTreeIndexMax_(locals.rc);
+		var rc = currentLine.getBounds(locals.rc);
+		var iTreeMin = this.getTreeIndexMin_(rc);
+		var iTreeMax = this.getTreeIndexMax_(rc);
 
 		for (var j = iTreeMin; j <= iTreeMax; j++)
 			this.quadTrees_[j].insert(locals.rc, currentLine);
@@ -125,22 +124,19 @@ Physics.World.prototype.addLineStrip = function(points) {
 }
 
 Physics.World.prototype.moveObject = function(object, dest, result) {
-	if (!this.locals_.moveObject) {
-		this.locals_.moveObject = {
-			lines: [],
-			pathLine: new Line(),
-			point: new Vector2(),
-			rc: new Rectangle(),
-			bounds: new Rectangle()
-		};
-	}
+	var locals = this.locals_.moveObject || (this.locals_.moveObject = {
+		lines: [],
+		pathLine: new Line(),
+		point: new Vector2(),
+		rc: new Rectangle(),
+		bounds: new Rectangle()
+	});
 
 	// default result
 	result.position.assignv(dest);
 	result.collisionLine = null;
 	result.percent = 1;
 
-	var locals = this.locals_.moveObject;
 	var objectPosition = object.getPosition();
 	var bounds = locals.bounds;
 
@@ -170,20 +166,20 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 		var line = lines[i];
 
 		// skip collision check if object is not moving towards the line
-		if (object.getVelocity().dotv(line.normal) > 0)
+		var direction = locals.point.assignv(dest).subtractv(objectPosition);
+		if (direction.dotv(line.normal) > 0)
 			continue;
 
-		// TODO: do the actual box collision...
+		// TODO: do the collision hulls calculation...
 
-		// if there is no interection with the line skip to the next line
+		// if there is no intersection with the line skip to the next line
 		var point = line.intersection(pathLine, locals.point);
 		if (point === null)
 			continue;
 
-		// maybe this can be replaced with some if
-		var percentX = (point.x - objectPosition.x) / (dest.x - objectPosition.x);
-		var percentY = (point.y - objectPosition.y) / (dest.y - objectPosition.y);
-		var percent = (isNaN(percentX) || !isFinite(percentX)) ? percentY : percentX;
+		var percent = (point.x - objectPosition.x) / (dest.x - objectPosition.x);
+		if (isNaN(percent) || !isFinite(percent))
+			percent = (point.y - objectPosition.y) / (dest.y - objectPosition.y);
 
 		if (percent < result.percent) {
 			result.position.x = objectPosition.x + (dest.x - objectPosition.x) * percent;
@@ -200,20 +196,16 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 }
 
 Physics.World.prototype.draw = function(context) {
-	if (!this.locals_.draw) {
-		this.locals_.draw = {
-			bounds: new Rectangle(),
-			midpoint: new Vector2()
-		};
-	}
-
-	var locals = this.locals_.draw;
+	var locals = this.locals_.draw || (this.locals_.draw = {
+		bounds: new Rectangle(),
+		midpoint: new Vector2()
+	});
 
 	context.save();
 	context.lineWidth = 2;
 
 	for (var i = this.lineStrips_.length - 1; i >= 0; i--) {
-		
+
 		// draw collision line normals
 
 		var first = this.lineStrips_[i];
@@ -243,7 +235,9 @@ Physics.World.prototype.draw = function(context) {
 		var first = this.lineStrips_[i];
 		var current = first;
 
-		if (first.isFloor)
+		if (first.flag)
+			context.strokeStyle = "#33F";
+		else if (first.isFloor)
 			context.strokeStyle = "#000";
 		else
 			context.strokeStyle = "#800";
@@ -255,10 +249,12 @@ Physics.World.prototype.draw = function(context) {
 			context.lineTo(Math.floor(current.p2.x), Math.floor(current.p2.y));
 
 			if (current.next !== first) {
-				if (current.next && current.isFloor !== current.next.isFloor) {
+				if (current.next && (current.isFloor !== current.next.isFloor || current.flag !== current.next.flag)) {
 					context.stroke();
 
-					if (current.next.isFloor)
+					if (current.next.flag)
+						context.strokeStyle = "#33F";
+					else if (current.next.isFloor)
 						context.strokeStyle = "#000";
 					else
 						context.strokeStyle = "#800";

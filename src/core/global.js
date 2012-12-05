@@ -1,4 +1,4 @@
-kEpsilon = 0.03125;
+kEpsilon = 0.00001;
 
 function assert(condition, message) {
 	if (!condition) {
