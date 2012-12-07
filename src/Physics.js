@@ -206,22 +206,29 @@ Physics.World.prototype.draw = function(context) {
 
 	for (var i = this.lineStrips_.length - 1; i >= 0; i--) {
 
-		// draw collision line normals
-
 		var first = this.lineStrips_[i];
 		var current = first;
 
 		while (current) {
-			current.midpoint(locals.midpoint);
+			var color = "#000";
 
-			if (current.isFloor)
-				context.strokeStyle = "#000";
-			else
-				context.strokeStyle = "#800";
+			if (current.flag === true)
+				color = "#FF0";
+			else if (current.isFloor)
+				color = "#080";
+
+			context.strokeStyle = color;
+
+			current.midpoint(locals.midpoint);
 
 			context.beginPath();
 			context.moveTo(Math.floor(locals.midpoint.x), Math.floor(locals.midpoint.y));
 			context.lineTo(Math.floor(locals.midpoint.x + current.normal.x * 10), Math.floor(locals.midpoint.y + current.normal.y * 10));
+			context.stroke();
+
+			context.beginPath();
+			context.moveTo(Math.floor(current.p1.x), Math.floor(current.p1.y));
+			context.lineTo(Math.floor(current.p2.x), Math.floor(current.p2.y));
 			context.stroke();
 
 			if (current.next !== first)
@@ -229,48 +236,6 @@ Physics.World.prototype.draw = function(context) {
 			else
 				current = null;
 		}
-
-		// draw collision lines
-
-		var first = this.lineStrips_[i];
-		var current = first;
-
-		if (first.flag)
-			context.strokeStyle = "#33F";
-		else if (first.isFloor)
-			context.strokeStyle = "#000";
-		else
-			context.strokeStyle = "#800";
-
-		context.beginPath();
-		context.moveTo(Math.floor(first.p1.x), Math.floor(first.p1.y));
-
-		while (current) {
-			context.lineTo(Math.floor(current.p2.x), Math.floor(current.p2.y));
-
-			if (current.next !== first) {
-				if (current.next && (current.isFloor !== current.next.isFloor || current.flag !== current.next.flag)) {
-					context.stroke();
-
-					if (current.next.flag)
-						context.strokeStyle = "#33F";
-					else if (current.next.isFloor)
-						context.strokeStyle = "#000";
-					else
-						context.strokeStyle = "#800";
-
-					context.beginPath();
-					context.moveTo(Math.floor(current.p2.x), Math.floor(current.p2.y));
-				}
-
-				current = current.next;
-			}
-			else {
-				current = null;
-			}
-		}
-
-		context.stroke();
 	}
 
 	// draw quad trees
@@ -295,11 +260,11 @@ Physics.World.prototype.draw = function(context) {
 				context.beginPath();
 	
 				if (this.bounds_.width > this.bounds_.height) {
-					context.moveTo(Math.floor(bounds.left + bounds.width) + 0.5, Math.floor(bounds.top) + 1);
+					context.moveTo(Math.floor(bounds.left + bounds.width) + 0.5, Math.floor(bounds.top));
 					context.lineTo(Math.floor(bounds.left + bounds.width) + 0.5, Math.floor(bounds.top + bounds.height));
 				}
 				else {
-					context.moveTo(Math.floor(bounds.left) + 1, Math.floor(bounds.top + bounds.height) + 0.5);
+					context.moveTo(Math.floor(bounds.left), Math.floor(bounds.top + bounds.height) + 0.5);
 					context.lineTo(Math.floor(bounds.left + bounds.width), Math.floor(bounds.top + bounds.height) + 0.5);
 				}
 	
@@ -316,12 +281,12 @@ Physics.World.prototype.draw = function(context) {
 Physics.World.prototype.drawQuadTreeNode = function(context, node) {
 	if (node.subdivided_) {
 		context.beginPath();
-		context.moveTo(Math.floor(node.bounds_.left + node.bounds_.width / 2) + 0.5, Math.floor(node.bounds_.top) + 1);
+		context.moveTo(Math.floor(node.bounds_.left + node.bounds_.width / 2) + 0.5, Math.floor(node.bounds_.top));
 		context.lineTo(Math.floor(node.bounds_.left + node.bounds_.width / 2) + 0.5, Math.floor(node.bounds_.top + node.bounds_.height));
 		context.stroke();
 
 		context.beginPath();
-		context.moveTo(Math.floor(node.bounds_.left ) + 1, Math.floor(node.bounds_.top + node.bounds_.height / 2) + 0.5);
+		context.moveTo(Math.floor(node.bounds_.left ), Math.floor(node.bounds_.top + node.bounds_.height / 2) + 0.5);
 		context.lineTo(Math.floor(node.bounds_.left + node.bounds_.width), Math.floor(node.bounds_.top + node.bounds_.height / 2) + 0.5);
 		context.stroke();
 
