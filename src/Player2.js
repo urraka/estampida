@@ -8,7 +8,7 @@ function Player2() {
 	this.touchedLine_ = null;
 
 	this.acceleration_ = new Vector2();
-	this.position_.assignxy(400, 450);
+	this.position_.assignxy(200, 400);
 	this.origin_.assignxy(26, 80);
 }
 
@@ -20,10 +20,12 @@ Player2.prototype.update = function(dt) {
 }
 
 Player2.prototype.move = function(dt) {
+	//dt = dt / 20;
 	var locals = this.locals_.move || (this.locals_.move = {
 		moveResult: new Physics.MoveResult(),
 		dest: new Vector2(),
-		vel: new Vector2()
+		vel: new Vector2(),
+		dir: new Vector2()
 	});
 
 	// some constants
@@ -58,7 +60,7 @@ Player2.prototype.move = function(dt) {
 	if (line && line.isFloor) {
 		this.velocity_.y = vel.y = 0; // ignore Y component
 
-		if (vel.x !== 0) { // i can do this because velocity is hard-code assigned, otherwise i should compare with epsilon, i guess?
+		if (vel.x !== 0) { // i can do this because velocity.x is hard-code assigned, otherwise i should compare with epsilon, i guess?
 
 			// change vel direction to match line slope
 
@@ -74,7 +76,7 @@ Player2.prototype.move = function(dt) {
 			}
 
 			vel.normalize();
-			vel.multiply(Math.abs(velx)); // this could be change to go slower or faster depending line slope
+			vel.multiply(Math.abs(velx)); // this could be change to go slower or faster depending line slope (i guess)
 
 			// if vel goes beyond the current floor line, change its magnitude to avoid it and set current line to the adjacent one (if it's floor aswell)
 
@@ -102,6 +104,11 @@ Player2.prototype.move = function(dt) {
 	}
 	else if (line) {
 		// handle wall/roof collision
+
+		var dir = locals.dir.assignv(line.p2).subtractv(line.p1).normalize();
+		magnitude = dir.dotv(this.velocity_);
+		this.velocity_.assignv(dir.multiply(magnitude));
+		vel.assignv(this.velocity_).multiply(dt);
 	}
 
 	if (!vel.equalsxy(0, 0)) {
@@ -146,58 +153,25 @@ Player2.prototype.draw = function(context) {
 	context.save();
 	context.fillStyle = this.color_;
 	context.lineWidth = 1;
+
 	context.fillRect(rc.left, rc.top, rc.width, rc.height);
+
 	context.fillStyle = "#F00";
+
+	if (!this.velocity_.equalsxy(0, 0)) {
+		context.beginPath();
+		context.moveTo(this.drawPosition_.x, this.drawPosition_.y);
+		context.lineTo(this.drawPosition_.x + this.velocity_.x / 10, this.drawPosition_.y + this.velocity_.y / 10);
+		context.stroke();
+
+		context.beginPath();
+		context.moveTo(this.drawPosition_.x + this.velocity_.x / 10, this.drawPosition_.y + this.velocity_.y / 10);
+		context.fill();
+	}
+
 	context.beginPath();
 	context.arc(this.drawPosition_.x, this.drawPosition_.y, 3, 0, 2 * Math.PI);
 	context.fill();
+
 	context.restore();
 }
-
-/*
-Player2.prototype.calculateVelocity_ = function() {
-	var locals = this.locals_.calculateVelocity_ || (this.locals_.calculateVelocity_ = {
-		dir: new Vector2()
-	});
-
-	var currentLine = this.moveResult_.collisionLine;
-	var magnitude = 0;
-
-	if (!currentLine) {
-		return this.velocity_.magnitude();
-	}
-
-	if (currentLine.isFloor) {
-		this.velocity_.y = 0;
-		magnitude = Math.abs(this.velocity_.x);
-
-		var p1 = currentLine.p1;
-		var p2 = currentLine.p2;
-
-		if (p1.x > p2.x) {
-			p1 = currentLine.p2;
-			p2 = currentLine.p1;
-		}
-
-		if (this.velocity_.x > 0) {
-			this.velocity_.x = p2.x - p1.x;
-			this.velocity_.y = p2.y - p1.y;
-		}
-		else {
-			this.velocity_.x = p1.x - p2.x;
-			this.velocity_.y = p1.y - p2.y;
-		}
-
-		this.velocity_.normalize();
-		this.velocity_.multiply(magnitude);
-	}
-	else {
-		var dir = locals.dir.assignv(currentLine.p2).subtractv(currentLine.p1).normalize();
-		this.velocity_.x = 0;
-		magnitude = dir.dotv(this.velocity_);
-		this.velocity_.assignv(dir.multiply(magnitude));
-	}
-
-	return magnitude;
-}
-*/

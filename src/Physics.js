@@ -62,16 +62,16 @@ Physics.World.prototype.locals_ = {};
 
 Physics.World.prototype.getTreeIndexMin_ = function(bounds) {
 	if (this.bounds_.width > this.bounds_.height)
-		return Math.max(0, Math.floor(bounds.left / this.bounds_.height));
+		return Math.max(0, Math.floor((bounds.left - this.bounds_.left) / this.bounds_.height));
 	else
-		return Math.max(0, Math.floor(bounds.top / this.bounds_.width));
+		return Math.max(0, Math.floor((bounds.top - this.bounds_.top) / this.bounds_.width));
 }
 
 Physics.World.prototype.getTreeIndexMax_ = function(bounds) {
 	if (this.bounds_.width > this.bounds_.height)
-		return Math.min(this.quadTrees_.length - 1, Math.floor((bounds.left + bounds.width) / this.bounds_.height));
+		return Math.min(this.quadTrees_.length - 1, Math.floor((bounds.left + bounds.width - this.bounds_.left) / this.bounds_.height));
 	else
-		return Math.min(this.quadTrees_.length - 1, Math.floor((bounds.top + bounds.height) / this.bounds_.width));
+		return Math.min(this.quadTrees_.length - 1, Math.floor((bounds.top + bounds.height - this.bounds_.top) / this.bounds_.width));
 }
 
 Physics.World.prototype.addLineStrip = function(points) {
@@ -91,7 +91,7 @@ Physics.World.prototype.addLineStrip = function(points) {
 
 	for (var i = 0; i < nPoints - 1; i++) {
 		currentLine = new Physics.WorldLine(points[i], points[i + 1]);
-		currentLine.isFloor = Math.abs(currentLine.slope() <= 1) && currentLine.normal.dot(locals.vi) > 0;
+		currentLine.isFloor = Math.abs(currentLine.slope()) <= 1 && currentLine.normal.dot(locals.vi) > 0;
 
 		if (firstLine === null)
 			firstLine = currentLine;
@@ -110,7 +110,7 @@ Physics.World.prototype.addLineStrip = function(points) {
 		var iTreeMax = this.getTreeIndexMax_(rc);
 
 		for (var j = iTreeMin; j <= iTreeMax; j++)
-			this.quadTrees_[j].insert(locals.rc, currentLine);
+			this.quadTrees_[j].insert(rc, currentLine);
 	}
 
 	// if the line strip is closed connect its ends
