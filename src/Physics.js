@@ -8,6 +8,7 @@ Physics.WorldLine = function(p1, p2) {
 	this.next = null;
 	this.isFloor = false;
 	this.flag = false; // if flagged color will change (for debugging)
+	this.active = false; // to show which lines are being tested for collision (for debugging)
 }
 
 Physics.WorldLine.prototype = new Line();
@@ -49,7 +50,7 @@ Physics.World = function(bounds) {
 	bounds.height = quadsSize;
 
 	for (var i = 0; i < n; i++) {
-		this.quadTrees_[i] = new QuadTree(bounds, maxDepth, maxChildren);
+		this.quadTrees_[i] = new QuadTree(bounds, Physics.World.itemBelongsToRect_, maxDepth, maxChildren);
 
 		if (horizontal)
 			bounds.left += quadsSize;
@@ -59,6 +60,10 @@ Physics.World = function(bounds) {
 }
 
 Physics.World.prototype.locals_ = {};
+
+Physics.World.itemBelongsToRect_ = function(item, bounds) {
+	return bounds.intersectsLine(item.p1, item.p2);
+}
 
 Physics.World.prototype.getTreeIndexMin_ = function(bounds) {
 	if (this.bounds_.width > this.bounds_.height)
@@ -110,7 +115,7 @@ Physics.World.prototype.addLineStrip = function(points) {
 		var iTreeMax = this.getTreeIndexMax_(rc);
 
 		for (var j = iTreeMin; j <= iTreeMax; j++)
-			this.quadTrees_[j].insert(rc, currentLine);
+			this.quadTrees_[j].insert(currentLine);
 	}
 
 	// if the line strip is closed connect its ends
@@ -149,6 +154,10 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 	var iTreeMin = this.getTreeIndexMin_(bounds);
 	var iTreeMax = this.getTreeIndexMax_(bounds);
 
+	for (var i = lines.length - 1; i >= 0; i--) {
+		lines[i].active = false;
+	}
+
 	lines.length = 0;
 
 	for (var i = iTreeMin; i <= iTreeMax; i++)
@@ -164,6 +173,7 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 
 	for (var i = lines.length - 1; i >= 0; i--) {
 		var line = lines[i];
+		line.active = true;
 
 		// skip collision check if object is not moving towards the line
 		var direction = locals.point.assignv(dest).subtractv(objectPosition);
@@ -210,14 +220,26 @@ Physics.World.prototype.draw = function(context) {
 		var current = first;
 
 		while (current) {
-			var color = "#000";
+			var color = "#999";
 
-			if (current.flag === true)
-				color = "#FF0";
+			if (current.active && current.isFloor)
+				color = "#060";
+			else if (current.active)
+				color = "#000";
 			else if (current.isFloor)
-				color = "#080";
+				color = "#595";
 
 			context.strokeStyle = color;
+
+			if (current.flag) {
+				context.shadowBlur = 10;
+				context.shadowColor = "#000";
+				context.beginPath();
+				context.moveTo(Math.floor(current.p1.x), Math.floor(current.p1.y));
+				context.lineTo(Math.floor(current.p2.x), Math.floor(current.p2.y));
+				context.stroke();
+				context.shadowBlur = 0;
+			}
 
 			current.midpoint(locals.midpoint);
 

@@ -1,11 +1,12 @@
 // QuadTree
 
-QuadTree = function(bounds, maxDepth, maxChildren) {
-	this.root_ = new QuadTreeNode(bounds, 0, maxDepth, maxChildren);
+QuadTree = function(bounds, itemBelongsToRectFunc, maxDepth, maxChildren) {
+	this.itemBelongsToRect_ = itemBelongsToRectFunc;
+	this.root_ = new QuadTreeNode(bounds, itemBelongsToRectFunc, 0, maxDepth, maxChildren);
 }
 
-QuadTree.prototype.insert = function(bounds, data) {
-	this.root_.insert(new QuadTreeItem(bounds, data));
+QuadTree.prototype.insert = function(item) {
+	this.root_.insert(item);
 }
 
 QuadTree.prototype.clear = function() {
@@ -18,17 +19,11 @@ QuadTree.prototype.retrieve = function(bounds, result) {
 	return result;
 }
 
-// QuadTreeItem
-
-function QuadTreeItem(bounds, data) {
-	this.bounds = new Rectangle(bounds);
-	this.data = data;
-}
-
 // QuadTreeNode
 
-function QuadTreeNode(bounds, depth, maxDepth, maxChildren) {
+function QuadTreeNode(bounds, itemBelongsToRectFunc, depth, maxDepth, maxChildren) {
 	this.bounds_ = new Rectangle(bounds);
+	this.itemBelongsToRect_ = itemBelongsToRectFunc;
 	this.nodes_ = { topLeft: null, topRight: null, bottomLeft: null, bottomRight: null };
 	this.subdivided_ = false;
 	this.children_ = [];
@@ -39,34 +34,34 @@ function QuadTreeNode(bounds, depth, maxDepth, maxChildren) {
 
 QuadTreeNode.prototype.locals_ = {};
 
-QuadTreeNode.prototype.insert = function(quadTreeItem) {
-	if (!this.bounds_.intersects(quadTreeItem.bounds))
+QuadTreeNode.prototype.insert = function(item) {
+	if (!this.itemBelongsToRect_(item, this.bounds_))
 		return;
 
 	if (!this.subdivided_ && this.depth_ < this.maxDepth_ && this.children_.length == this.maxChildren_)
 		this.subdivide();
 
 	if (this.subdivided_) {
-		this.nodes_.topLeft.insert(quadTreeItem);
-		this.nodes_.topRight.insert(quadTreeItem);
-		this.nodes_.bottomLeft.insert(quadTreeItem);
-		this.nodes_.bottomRight.insert(quadTreeItem);
+		this.nodes_.topLeft.insert(item);
+		this.nodes_.topRight.insert(item);
+		this.nodes_.bottomLeft.insert(item);
+		this.nodes_.bottomRight.insert(item);
 	}
 	else {
-		this.children_.push(quadTreeItem);
+		this.children_.push(item);
 	}
 }
 
 QuadTreeNode.prototype.subdivide = function() {
+	var locals = this.locals_.subdivide || (this.locals_.subdivide = {
+		rc: new Rectangle()
+	});
+
 	if (this.subdivided_)
 		return;
 
-	if (!this.locals_.subdivide) {
-		this.locals_.subdivide = { rc: new Rectangle() };
-	}
-
 	var depth = this.depth_ + 1;
-	var rc = this.locals_.subdivide.rc;
+	var rc = locals.rc;
 	var x = this.bounds_.left;
 	var y = this.bounds_.top;
 	var w = Math.round(this.bounds_.width / 2);
@@ -74,10 +69,10 @@ QuadTreeNode.prototype.subdivide = function() {
 	var W = this.bounds_.width;
 	var H = this.bounds_.height;
 
-	this.nodes_.topLeft     = new QuadTreeNode(rc.assign(x, y, w, h), depth, this.maxDepth_, this.maxChildren_);
-	this.nodes_.bottomLeft  = new QuadTreeNode(rc.assign(x, y + h, w, H - h), depth, this.maxDepth_, this.maxChildren_);
-	this.nodes_.topRight    = new QuadTreeNode(rc.assign(x + w, y, W - w, h), depth, this.maxDepth_, this.maxChildren_);
-	this.nodes_.bottomRight = new QuadTreeNode(rc.assign(x + w, y + h, W - w, H - h), depth, this.maxDepth_, this.maxChildren_);
+	this.nodes_.topLeft     = new QuadTreeNode(rc.assign(x, y, w, h), this.itemBelongsToRect_, depth, this.maxDepth_, this.maxChildren_);
+	this.nodes_.bottomLeft  = new QuadTreeNode(rc.assign(x, y + h, w, H - h), this.itemBelongsToRect_, depth, this.maxDepth_, this.maxChildren_);
+	this.nodes_.topRight    = new QuadTreeNode(rc.assign(x + w, y, W - w, h), this.itemBelongsToRect_, depth, this.maxDepth_, this.maxChildren_);
+	this.nodes_.bottomRight = new QuadTreeNode(rc.assign(x + w, y + h, W - w, H - h), this.itemBelongsToRect_, depth, this.maxDepth_, this.maxChildren_);
 
 	for (var i = this.children_.length - 1; i >= 0; i--) {
 		this.nodes_.topLeft.insert(this.children_[i]);
@@ -103,7 +98,7 @@ QuadTreeNode.prototype.retrieve = function(bounds, result) {
 	else {
 		var len = result.length;
 		for (var i = this.children_.length - 1; i >= 0; i--) {
-			var item = this.children_[i].data;
+			var item = this.children_[i];
 			if (result.lastIndexOf(item, len - 1) === -1) {
 				result.push(item);
 			}
