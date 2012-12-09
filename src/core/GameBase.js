@@ -1,4 +1,4 @@
-function Game() {
+function GameBase() {
 	this.renderWindow_ = new RenderWindow();
 	this.dt_ = 10;
 	this.fps_ = 0;
@@ -14,7 +14,7 @@ function Game() {
 		function(callback){ window.setTimeout(callback, 1); };
 }
 
-Game.prototype.start = function(element) {
+GameBase.prototype.start = function(element) {
 	this.renderWindow_.create(element);
 
 	Keyboard.initialize();
@@ -23,11 +23,11 @@ Game.prototype.start = function(element) {
 	this.mainLoop();
 }
 
-Game.prototype.getRenderWindow = function() {
+GameBase.prototype.getRenderWindow = function() {
 	return this.renderWindow_;
 }
 
-Game.prototype.mainLoop = function() {
+GameBase.prototype.mainLoop = function() {
 	var self = this;
 
 	var fpsCount = 0;
@@ -91,15 +91,15 @@ Game.prototype.mainLoop = function() {
 	frame();
 }
 
-Game.prototype.setState = function(state) {
+GameBase.prototype.setState = function(state) {
 	state.game_ = this;
 	this.currentState_ = state;
 }
 
-Game.prototype.getFps = function() {
+GameBase.prototype.getFps = function() {
 	return this.fps_;
 }
 
-Game.prototype.showFps = function(showFps) {
+GameBase.prototype.showFps = function(showFps) {
 	this.showFps_ = showFps;
 }

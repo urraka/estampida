@@ -128,11 +128,10 @@ Controller.initialize = function() {
 		Controller.keyboardChanged.call(Controller, key, isKeyDown);
 	});
 
-	if ("createTouch" in document) {
-		$(document).bind("touchstart touchmove touchend touchcancel", function(e) {
-			Controller.touchChanged.call(Controller, e.touches);
-		});
-	}
+	$(document).bind("touchstart touchmove touchend touchcancel", function(e) {
+		e.preventDefault();
+		Controller.touchChanged.call(Controller, e.touches);
+	});
 }
 
 Controller.updateViewSize = function(viewSize) {

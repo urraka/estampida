@@ -1,0 +1,4 @@
+- Repeat move logic on player when necessary (collided with something, changed to next floor).
+- Rename Estampida.js to something more generic (nameless).
+- Add main.js instead of embedding code in html.
+x Fix bug: force object added to QuadTree to have a method "intersectsRect" instead of passing a bounds object.

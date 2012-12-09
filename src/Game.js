@@ -1,11 +1,11 @@
-Estampida.prototype = new Game();
+Game.prototype = new GameBase();
 
-function Estampida() {
-	Game.call(this);
+function Game() {
+	GameBase.call(this);
 	this.level_ = null;
 }
 
-Estampida.prototype.initialize = function() {
+Game.prototype.initialize = function() {
 	var self = this;
 
 	var renderWindow = this.getRenderWindow();
@@ -74,7 +74,7 @@ Estampida.prototype.initialize = function() {
 	};
 }
 
-Estampida.prototype.windowResize = function(size) {
+Game.prototype.windowResize = function(size) {
 	this.getRenderWindow().setLogicalSize(size);
 
 	if (this.level_) {
