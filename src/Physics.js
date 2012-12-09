@@ -1,5 +1,7 @@
 Physics = {};
 
+Physics.kMaxFloorSlope = 5;
+
 // Physics.WorldLine : Line
 
 Physics.WorldLine = function(p1, p2) {
@@ -7,6 +9,7 @@ Physics.WorldLine = function(p1, p2) {
 	this.previous = null;
 	this.next = null;
 	this.isFloor = false;
+	this.slope = this.slope();
 	this.flag = false; // if flagged color will change (for debugging)
 	this.active = false; // to show which lines are being tested for collision (for debugging)
 }
@@ -27,6 +30,14 @@ Physics.World = function(bounds) {
 	this.quadTrees_ = [];
 	this.lineStrips_ = [];
 	this.bounds_ = new Rectangle(bounds);
+
+	// Line highlight modes:
+	//   0 = all retrieved from quadtree
+	//   1 = skip out of bounds
+	//   2 = skip out of bounds and opposite direction
+	//   3 = only intersected
+	this.linesHighlightMode_ = 0;
+	this.activeLines_ = [];
 
 	var blockSize = 100; // desired size of tree sub-divisions (approximate value)
 	var maxChildren = 5;
@@ -96,7 +107,7 @@ Physics.World.prototype.addLineStrip = function(points) {
 
 	for (var i = 0; i < nPoints - 1; i++) {
 		currentLine = new Physics.WorldLine(points[i], points[i + 1]);
-		currentLine.isFloor = Math.abs(currentLine.slope()) <= 1 && currentLine.normal.dot(locals.vi) > 0;
+		currentLine.isFloor = Math.abs(currentLine.slope) <= Physics.kMaxFloorSlope && currentLine.normal.dot(locals.vi) > 0;
 
 		if (firstLine === null)
 			firstLine = currentLine;
@@ -154,10 +165,6 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 	var iTreeMin = this.getTreeIndexMin_(bounds);
 	var iTreeMax = this.getTreeIndexMax_(bounds);
 
-	for (var i = lines.length - 1; i >= 0; i--) {
-		lines[i].active = false;
-	}
-
 	lines.length = 0;
 
 	for (var i = iTreeMin; i <= iTreeMax; i++)
@@ -173,12 +180,26 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 
 	for (var i = lines.length - 1; i >= 0; i--) {
 		var line = lines[i];
-		line.active = true;
+
+		this.activeLines_.push(line);
+
+		if (this.linesHighlightMode_ === 0)
+			line.active = true;
+
+		var lineBounds = line.getBounds(locals.rc);
+		if (!lineBounds.intersects(bounds))
+			continue;
+
+		if (this.linesHighlightMode_ === 1)
+			line.active = true;
 
 		// skip collision check if object is not moving towards the line
 		var direction = locals.point.assignv(dest).subtractv(objectPosition);
 		if (direction.dotv(line.normal) > 0)
 			continue;
+
+		if (this.linesHighlightMode_ === 2)
+			line.active = true;
 
 		// TODO: do the collision hulls calculation...
 
@@ -186,6 +207,9 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 		var point = line.intersection(pathLine, locals.point);
 		if (point === null)
 			continue;
+
+		if (this.linesHighlightMode_ === 3)
+			line.active = true;
 
 		var percent = (point.x - objectPosition.x) / (dest.x - objectPosition.x);
 		if (isNaN(percent) || !isFinite(percent))
@@ -298,6 +322,14 @@ Physics.World.prototype.draw = function(context) {
 	}
 
 	context.restore();
+
+	// clear active lines
+
+	for (var i = this.activeLines_.length - 1; i >= 0; i--) {
+		this.activeLines_[i].active = false;
+	}
+
+	this.activeLines_.length = 0;
 }
 
 Physics.World.prototype.drawQuadTreeNode = function(context, node) {

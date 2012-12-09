@@ -7,6 +7,15 @@ function Level() {
 	this.player2 = new Player2();
 	this.player2.map_ = this.map2;
 
+	this.lineModes = [
+		"Highlight mode: highlight all lines retrieved from QuadTrees.",
+		"Highlight mode: don't highlight lines outside object bounds.",
+		"Highlight mode: don't highlight lines outside object bounds or lines facing opposite direction.",
+		"Highlight mode: highlight only intersected lines."
+	];
+
+	Keyboard.bind(this, this.onKeyChanged);
+
 	// create world object
 
 	/*var lineStrip = [
@@ -117,6 +126,12 @@ Level.prototype.updateViewSize = function(size) {
 	this.viewRect_.height = size.y;
 }
 
+Level.prototype.onKeyChanged = function(key, isKeyDown) {
+	if (isKeyDown && key === Keyboard.Space) {
+		this.world.linesHighlightMode_ = (this.world.linesHighlightMode_ + 1) % 4;
+	}
+}
+
 Level.prototype.update = function(dt) {
 	//this.player.update(dt);
 	this.player2.update(dt);
@@ -145,6 +160,12 @@ Level.prototype.draw = function(context) {
 	this.world.draw(context);
 	//this.map2.draw(context);
 	this.player2.draw(context);
+
+	context.translate(Math.floor(this.viewRect_.left), Math.floor(this.viewRect_.top));
+	context.fillStyle = "#000";
+	context.font = "12px verdana";
+	context.textBaseline = "bottom";
+	context.fillText(this.lineModes[this.world.linesHighlightMode_], 10, this.viewRect_.height - 10);
 
 /*
 	context.translate(-Math.floor(this.viewRect_.left), -Math.floor(this.viewRect_.top));

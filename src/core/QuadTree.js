@@ -69,6 +69,14 @@ QuadTreeNode.prototype.subdivide = function() {
 	var W = this.bounds_.width;
 	var H = this.bounds_.height;
 
+	// Note: In general, using objects from SomeClass.locals is bad in recursive
+	// functions, because those objects are shared among every call to the same
+	// method of all instances. This method is not explicitly recursive, but if
+	// all the children items fall in the same node, that node may end up being
+	// subdivided making this method recursive.
+	// Nevertheless, locals.rc is reassigned on each call in this case, so it's
+	// safe to use it here.
+
 	this.nodes_.topLeft     = new QuadTreeNode(rc.assign(x, y, w, h), this.itemBelongsToRect_, depth, this.maxDepth_, this.maxChildren_);
 	this.nodes_.bottomLeft  = new QuadTreeNode(rc.assign(x, y + h, w, H - h), this.itemBelongsToRect_, depth, this.maxDepth_, this.maxChildren_);
 	this.nodes_.topRight    = new QuadTreeNode(rc.assign(x + w, y, W - w, h), this.itemBelongsToRect_, depth, this.maxDepth_, this.maxChildren_);

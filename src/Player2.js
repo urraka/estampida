@@ -19,14 +19,15 @@ Player2.prototype.update = function(dt) {
 	this.move(dt);
 }
 
-Player2.prototype.move = function(dt) {
-	//dt = dt / 20;
+Player2.prototype.move = function(dt, recursionCount) {
 	var locals = this.locals_.move || (this.locals_.move = {
 		moveResult: new Physics.MoveResult(),
 		dest: new Vector2(),
 		vel: new Vector2(),
 		dir: new Vector2()
 	});
+
+	recursionCount = recursionCount || 0;
 
 	// some constants
 
@@ -38,24 +39,27 @@ Player2.prototype.move = function(dt) {
 	var kMoveLeft = 1;
 	var kMoveRight = 2;
 
-	var moveDirection = kMoveNone;
-
-	if (Controller.isPressed(Controller.Jump))
-		this.jump(kJumpVel);
+	var walkSpeed = 0;
 
 	if (Controller.isPressed(Controller.Left))
-		moveDirection = kMoveLeft;
+		walkSpeed = -kWalkVel;
 	else if (Controller.isPressed(Controller.Right))
-		moveDirection = kMoveRight;
+		walkSpeed = kWalkVel;
+
+	if (Controller.isPressed(Controller.Jump))
+		this.jump(kJumpVel, walkSpeed);
 
 	this.acceleration_.assign(0, kGravity);
-	this.velocity_.x = (moveDirection === kMoveRight) ? kWalkVel : (moveDirection == kMoveLeft ? -kWalkVel : 0);
+	this.velocity_.x = walkSpeed;
 	this.velocity_.y += this.acceleration_.y * dt;
 
 	var moveResult = locals.moveResult;
 	var line = this.touchedLine_;
 	var dest = locals.dest;
 	var vel = locals.vel.assignv(this.velocity_).multiply(dt);
+
+	var percent = 1;
+	var repeat = false;
 
 	if (line && line.isFloor) {
 		this.velocity_.y = vel.y = 0; // ignore Y component
@@ -75,8 +79,9 @@ Player2.prototype.move = function(dt) {
 				destPoint = line.p1;
 			}
 
+			var magnitude = Math.abs(velx);
 			vel.normalize();
-			vel.multiply(Math.abs(velx)); // this could be change to go slower or faster depending line slope (i guess)
+			vel.multiply(magnitude); // this could be changed to go slower or faster depending line slope (i guess)
 
 			// if vel goes beyond the current floor line, change its magnitude to avoid it and set current line to the adjacent one (if it's floor aswell)
 
@@ -99,6 +104,9 @@ Player2.prototype.move = function(dt) {
 
 				if (line)
 					line.flag = true;
+
+				repeat = true;
+				percent = vel.magnitude() / magnitude;
 			}
 		}
 	}
@@ -120,6 +128,11 @@ Player2.prototype.move = function(dt) {
 			if (line) line.flag = false;
 			line = moveResult.collisionLine;
 			line.flag = true;
+
+			if (moveResult.percent > 0) {
+				repeat = true;
+				percent *= moveResult.percent;
+			}
 		}
 		else if (line && !line.isFloor) {
 			line.flag = false;
@@ -128,11 +141,22 @@ Player2.prototype.move = function(dt) {
 	}
 
 	this.touchedLine_ = line; // keep the current line for next update
+
+	if (recursionCount < 1 && repeat && Math.round(100 * percent) / 100 < 1) {
+		this.move(dt * (1 - percent), recursionCount + 1); // warning: only call this at the end (read notes on QuadTree.subdivide)
+	}
 }
 
-Player2.prototype.jump = function(value) {
-	if (this.touchedLine_ && this.touchedLine_.isFloor) {
-		this.velocity_.y = value;
+Player2.prototype.jump = function(jumpVel, walkSpeed) {
+	if (this.touchedLine_ && this.touchedLine_.isFloor &&
+			(
+				walkSpeed === 0 ||
+				this.touchedLine_.slope === 0 ||
+				(this.touchedLine_.slope > 0 && (walkSpeed > 0 || jumpVel / walkSpeed > this.touchedLine_.slope)) ||
+				(this.touchedLine_.slope < 0 && (walkSpeed < 0 || jumpVel / walkSpeed < this.touchedLine_.slope))
+			)
+		) {
+		this.velocity_.y = jumpVel;
 		this.touchedLine_.flag = false;
 		this.touchedLine_ = null; // detach from floor
 	}
