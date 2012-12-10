@@ -7,7 +7,8 @@ function Player2() {
 	this.color_ = "rgba(255, 255, 0, 0.5)";
 	this.touchedLine_ = null;
 
-	this.acceleration_ = new Vector2();
+	var kGravity = 9.8 * 150;
+	this.acceleration_ = new Vector2(0, kGravity);
 	this.position_.assignxy(200, 400);
 	this.origin_.assignxy(26, 80);
 }
@@ -33,7 +34,6 @@ Player2.prototype.move = function(dt, recursionCount) {
 
 	var kWalkVel = 250;
 	var kJumpVel = -550;
-	var kGravity = 9.8 * 150;
 
 	var kMoveNone = 0;
 	var kMoveLeft = 1;
@@ -49,9 +49,7 @@ Player2.prototype.move = function(dt, recursionCount) {
 	if (Controller.isPressed(Controller.Jump))
 		this.jump(kJumpVel, walkSpeed);
 
-	this.acceleration_.assign(0, kGravity);
 	this.velocity_.x = walkSpeed;
-	this.velocity_.y += this.acceleration_.y * dt;
 
 	var moveResult = locals.moveResult;
 	var line = this.touchedLine_;
@@ -113,10 +111,17 @@ Player2.prototype.move = function(dt, recursionCount) {
 	else if (line) {
 		// handle wall/roof collision
 
-		var dir = locals.dir.assignv(line.p2).subtractv(line.p1).normalize();
-		magnitude = dir.dotv(this.velocity_);
-		this.velocity_.assignv(dir.multiply(magnitude));
-		vel.assignv(this.velocity_).multiply(dt);
+		this.velocity_.x = 0;
+
+		if (this.velocity_.dotv(line.normal) < 0) {
+			var dir = locals.dir.assignv(line.p2).subtractv(line.p1).normalize();
+			magnitude = dir.dotv(this.velocity_);
+			this.velocity_.assignv(dir.multiply(magnitude));
+			vel.assignv(this.velocity_).multiply(dt);
+		}
+		else {
+			vel.x = 0;
+		}
 	}
 
 	if (!vel.equalsxy(0, 0)) {
@@ -129,10 +134,8 @@ Player2.prototype.move = function(dt, recursionCount) {
 			line = moveResult.collisionLine;
 			line.flag = true;
 
-			if (moveResult.percent > 0) {
-				repeat = true;
-				percent *= moveResult.percent;
-			}
+			repeat = true;
+			percent *= moveResult.percent;
 		}
 		else if (line && !line.isFloor) {
 			line.flag = false;
@@ -142,7 +145,9 @@ Player2.prototype.move = function(dt, recursionCount) {
 
 	this.touchedLine_ = line; // keep the current line for next update
 
-	if (recursionCount < 1 && repeat && Math.round(100 * percent) / 100 < 1) {
+	this.velocity_.y += this.acceleration_.y * dt * percent;
+	
+	if (recursionCount < 1 && repeat) {
 		this.move(dt * (1 - percent), recursionCount + 1); // warning: only call this at the end (read notes on QuadTree.subdivide)
 	}
 }

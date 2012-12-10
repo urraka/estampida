@@ -211,9 +211,14 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 		if (this.linesHighlightMode_ === 3)
 			line.active = true;
 
-		var percent = (point.x - objectPosition.x) / (dest.x - objectPosition.x);
-		if (isNaN(percent) || !isFinite(percent))
-			percent = (point.y - objectPosition.y) / (dest.y - objectPosition.y);
+		var percent = 0;
+		var dx = dest.x - objectPosition.x;
+		var dy = dest.y - objectPosition.y;
+
+		if (Math.abs(dx) > Math.abs(dy))
+			percent = (point.x - objectPosition.x) / dx;
+		else
+			percent = (point.y - objectPosition.y) / dy;
 
 		if (percent < result.percent) {
 			result.position.x = objectPosition.x + (dest.x - objectPosition.x) * percent;

@@ -8,31 +8,33 @@ function Level() {
 	this.player2.map_ = this.map2;
 
 	this.lineModes = [
-		"Highlight mode: highlight all lines retrieved from QuadTrees.",
-		"Highlight mode: don't highlight lines outside object bounds.",
-		"Highlight mode: don't highlight lines outside object bounds or lines facing opposite direction.",
-		"Highlight mode: highlight only intersected lines."
+		"Lines mode: highlight all lines retrieved from QuadTrees.",
+		"Lines mode: don't highlight lines outside object bounds.",
+		"Lines mode: don't highlight lines outside object bounds or lines facing opposite direction.",
+		"Lines mode: highlight only intersected lines."
 	];
 
 	Keyboard.bind(this, this.onKeyChanged);
 
 	// create world object
 
-	/*var lineStrip = [
-		new Vector2(20, 450),
-		new Vector2(200, 300),
-		new Vector2(600, 200),
-		new Vector2(650, 500),
-		new Vector2(600, 500),
-		new Vector2(500, 580),
-		new Vector2(350, 540),
-		new Vector2(300, 500),
-		new Vector2(200, 450),
-		new Vector2(100, 500),
-		new Vector2(20, 450)
-	];*/
+	var lineStrips1 = [
+		[
+			new Vector2(20, 450),
+			new Vector2(200, 300),
+			new Vector2(600, 200),
+			new Vector2(650, 500),
+			new Vector2(600, 500),
+			new Vector2(500, 580),
+			new Vector2(350, 540),
+			new Vector2(300, 500),
+			new Vector2(200, 450),
+			new Vector2(100, 500),
+			new Vector2(20, 450)
+		]
+	];
 
-	var lineStrips = [
+	var lineStrips2 = [
 		[
 			new Vector2(34.3, 222),
 			new Vector2(109.1, 84.6),
@@ -60,7 +62,7 @@ function Level() {
 			new Vector2(-14.1, 722),
 			new Vector2(-102, 689.7),
 			new Vector2(-237.4, 665.5),
-			new Vector2(-249.5, 555.4),
+			new Vector2(-217.4, 555.4),
 			new Vector2(-217.2, 376.6),
 			new Vector2(-55.6, 286.7),
 			new Vector2(34.3, 222)
@@ -95,6 +97,8 @@ function Level() {
 			new Vector2(193.9, 550.3)
 		]
 	];
+
+	var lineStrips = lineStrips2;
 
 	var line = new Line();
 	var rc = new Rectangle();
