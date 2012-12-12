@@ -3,9 +3,12 @@ Player2.prototype = new GameObject();
 function Player2() {
 	GameObject.call(this);
 
+	this.slowMotion = false;
+
 	this.world_ = null; // Physics.World object
 	this.color_ = "rgba(255, 255, 0, 0.5)";
 	this.touchedLine_ = null;
+	this.touchedHull_ = new Physics.LineHull();
 
 	var kGravity = 9.8 * 150;
 	this.acceleration_ = new Vector2(0, kGravity);
@@ -17,6 +20,10 @@ Player2.prototype.locals_ = {};
 
 Player2.prototype.update = function(dt) {
 	this.previousPosition_.assignv(this.position_); // used for frame interpolation
+
+	if (this.slowMotion)
+		dt /= 5;
+
 	this.move(dt);
 }
 
@@ -34,10 +41,6 @@ Player2.prototype.move = function(dt, recursionCount) {
 
 	var kWalkVel = 250;
 	var kJumpVel = -550;
-
-	var kMoveNone = 0;
-	var kMoveLeft = 1;
-	var kMoveRight = 2;
 
 	var walkSpeed = 0;
 
@@ -81,7 +84,7 @@ Player2.prototype.move = function(dt, recursionCount) {
 			vel.normalize();
 			vel.multiply(magnitude); // this could be changed to go slower or faster depending line slope (i guess)
 
-			// if vel goes beyond the current floor line, change its magnitude to avoid it and set current line to the adjacent one (if it's floor aswell)
+			// if vel goes beyond the current floor line, change its magnitude to avoid it and set current line to the adjacent one (if it's a floor line)
 
 			var x = this.position_.x + vel.x;
 
@@ -90,18 +93,24 @@ Player2.prototype.move = function(dt, recursionCount) {
 				vel.x = destPoint.x - this.position_.x;
 				vel.y = vel.x * r;
 
-				line.flag = false;
+				this.touchedHull_.realLine.flag = false;
 
 				if (destPoint === line.p1)
 					line = line.previous;
 				else
 					line = line.next;
 
-				if (line && !line.isFloor)
+				if (line && !line.isFloor) {
 					line = null;
+				}
 
-				if (line)
-					line.flag = true;
+				if (line && line !== this.touchedHull_.line && line !== this.touchedHull_.line1 && line !== this.touchedHull_.line2) {
+					this.world_.createLineHull(this, line, this.touchedHull_);
+					this.touchedHull_.realLine.flag = true;
+				}
+				else if (line) {
+					this.touchedHull_.realLine.flag = true;
+				}
 
 				repeat = true;
 				percent = vel.magnitude() / magnitude;
@@ -129,23 +138,24 @@ Player2.prototype.move = function(dt, recursionCount) {
 		this.world_.moveObject(this, dest, moveResult);
 		this.position_.assignv(moveResult.position);
 
-		if (moveResult.collisionLine) {
-			if (line) line.flag = false;
-			line = moveResult.collisionLine;
-			line.flag = true;
+		if (moveResult.collisionLineIndex !== -1) {
+			if (line) this.touchedHull_.realLine.flag = false;
+			this.touchedHull_.assign(moveResult.collisionHull);
+			line = this.touchedHull_.getLine(moveResult.collisionLineIndex);
+			this.touchedHull_.realLine.flag = true;
 
 			repeat = true;
 			percent *= moveResult.percent;
 		}
 		else if (line && !line.isFloor) {
-			line.flag = false;
+			this.touchedHull_.realLine.flag = false;
 			line = null;
 		}
 	}
 
 	this.touchedLine_ = line; // keep the current line for next update
 
-	this.velocity_.y += this.acceleration_.y * dt * percent;
+	this.velocity_.y += this.acceleration_.y * dt * percent; // doing this at the end because i need percent. could be better to do it before, outside move method instead
 	
 	if (recursionCount < 1 && repeat) {
 		this.move(dt * (1 - percent), recursionCount + 1); // warning: only call this at the end (read notes on QuadTree.subdivide)
@@ -153,17 +163,16 @@ Player2.prototype.move = function(dt, recursionCount) {
 }
 
 Player2.prototype.jump = function(jumpVel, walkSpeed) {
-	if (this.touchedLine_ && this.touchedLine_.isFloor &&
-			(
-				walkSpeed === 0 ||
-				this.touchedLine_.slope === 0 ||
-				(this.touchedLine_.slope > 0 && (walkSpeed > 0 || jumpVel / walkSpeed > this.touchedLine_.slope)) ||
-				(this.touchedLine_.slope < 0 && (walkSpeed < 0 || jumpVel / walkSpeed < this.touchedLine_.slope))
-			)
-		) {
-		this.velocity_.y = jumpVel;
-		this.touchedLine_.flag = false;
-		this.touchedLine_ = null; // detach from floor
+	if (this.touchedLine_ && this.touchedLine_.isFloor) {
+		var slope = this.touchedLine_.slope();
+
+		if (walkSpeed === 0 || slope === 0 ||
+			(slope > 0 && (walkSpeed > 0 || jumpVel / walkSpeed > slope)) ||
+			(slope < 0 && (walkSpeed < 0 || jumpVel / walkSpeed < slope))) {
+			this.velocity_.y = jumpVel;
+			this.touchedHull_.realLine.flag = false;
+			this.touchedLine_ = null; // detach from floor
+		}
 	}
 }
 

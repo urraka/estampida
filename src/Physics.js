@@ -9,18 +9,66 @@ Physics.WorldLine = function(p1, p2) {
 	this.previous = null;
 	this.next = null;
 	this.isFloor = false;
-	this.slope = this.slope();
+
 	this.flag = false; // if flagged color will change (for debugging)
 	this.active = false; // to show which lines are being tested for collision (for debugging)
 }
 
 Physics.WorldLine.prototype = new Line();
 
+Physics.WorldLine.prototype.assignl = function(worldLine) {
+	Line.prototype.assignl.call(this, worldLine);
+	this.previous = worldLine.previous;
+	this.next = worldLine.next;
+	this.isFloor = worldLine.isFloor;
+	return this;
+}
+
+// Physics.LineHull
+
+Physics.LineHull = function(lineHull) {
+	this.line = new Physics.WorldLine();
+	this.line1 = new Physics.WorldLine();
+	this.line2 = new Physics.WorldLine();
+	this.realLine = null;
+
+	if (lineHull)
+		this.assign(lineHull);
+}
+
+Physics.LineHull.prototype.assign = function(lineHull) {
+	this.line.assignl(lineHull.line);
+	this.line1.assignl(lineHull.line1);
+	this.line2.assignl(lineHull.line2);
+	this.realLine = lineHull.realLine;
+
+	this.line1.next = this.line;
+	this.line2.previous = this.line;
+
+	if (lineHull.line.previous === lineHull.line1)
+		this.line.previous = this.line1;
+
+	if (lineHull.line.next === lineHull.line2)
+		this.line.next = this.line2;
+
+	return this;
+}
+
+Physics.LineHull.prototype.getLine = function(index) {
+	switch (index) {
+		case 0: return this.line;
+		case 1: return this.line1;
+		case 2: return this.line2;
+		default: return null;
+	}
+}
+
 // Physics.MoveResult
 
 Physics.MoveResult = function() {
 	this.position = new Vector2();
-	this.collisionLine = null;
+	this.collisionLineIndex = -1;
+	this.collisionHull = new Physics.LineHull();
 	this.percent = 0;
 }
 
@@ -31,12 +79,7 @@ Physics.World = function(bounds) {
 	this.lineStrips_ = [];
 	this.bounds_ = new Rectangle(bounds);
 
-	// Line highlight modes:
-	//   0 = all retrieved from quadtree
-	//   1 = skip out of bounds
-	//   2 = skip out of bounds and opposite direction
-	//   3 = only intersected
-	this.linesHighlightMode_ = 0;
+	// for debugging
 	this.showCollisionHull_ = true;
 	this.activeLines_ = [];
 
@@ -57,8 +100,7 @@ Physics.World.QuadTreeItemCallbacks = {
 
 Physics.World.prototype.addLineStrip = function(points) {
 	var locals = this.locals_.addLineStrip || (this.locals_.addLineStrip = {
-		rc: new Rectangle(),
-		vi: new Vector2(0, -1)
+		rc: new Rectangle()
 	});
 
 	if (points.length <= 1)
@@ -72,7 +114,7 @@ Physics.World.prototype.addLineStrip = function(points) {
 
 	for (var i = 0; i < nPoints - 1; i++) {
 		currentLine = new Physics.WorldLine(points[i], points[i + 1]);
-		currentLine.isFloor = Math.abs(currentLine.slope) <= Physics.kMaxFloorSlope && currentLine.normal.dot(locals.vi) > 0;
+		currentLine.isFloor = Math.abs(currentLine.slope()) <= Physics.kMaxFloorSlope && currentLine.normal.dotxy(0, -1) > 0;
 
 		if (firstLine === null)
 			firstLine = currentLine;
@@ -104,29 +146,24 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 		point: new Vector2(),
 		rc: new Rectangle(),
 		bounds: new Rectangle(),
-		hull: {
-			line: new Line(),
-			line1: new Line(),
-			line2: new Line()
-		}
+		hull: new Physics.LineHull(),
+		hullLines: [null, null, null]
 	});
 
-	// default result
+	// default result (no collision)
 	result.position.assignv(dest);
-	result.collisionLine = null;
+	result.collisionLineIndex = -1;
 	result.percent = 1;
 
 	var objectPosition = object.getPosition();
 	var bounds = locals.bounds;
-	var lines = locals.lines;
-
-	lines.length = 0;
 
 	object.getBoundingRect(objectPosition, bounds);
 	object.getBoundingRect(dest, locals.rc);
 	bounds.expand(locals.rc);
 
-	this.quadTreeArray_.retrieve(bounds, lines);
+	locals.lines.length = 0;
+	var lines = this.quadTreeArray_.retrieve(bounds, locals.lines);
 
 	var nLines = lines.length;
 
@@ -134,61 +171,71 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 		return;
 
 	var pathLine = locals.pathLine.assignp(objectPosition, dest);
+	var direction = locals.point.assignv(dest).subtractv(objectPosition);
 	var invAngle = Math.PI + locals.point.assignv(dest).subtractv(objectPosition).normalize().angle();
 
 	for (var i = 0; i < nLines; i++) {
 		var line = lines[i];
 
+		line.active = true;
 		this.activeLines_.push(line);
-
-		if (this.linesHighlightMode_ === 0)
-			line.active = true;
 
 		var lineBounds = line.getBounds(locals.rc);
 		if (!lineBounds.intersects(bounds))
 			continue;
 
-		if (this.linesHighlightMode_ === 1)
-			line.active = true;
-
-		// skip collision check if object is not moving towards the line
-		var direction = locals.point.assignv(dest).subtractv(objectPosition);
-		if (direction.dotv(line.normal) > 0)
-			continue;
-
-		if (this.linesHighlightMode_ === 2)
-			line.active = true;
-
-		// TODO: do the collision hulls calculation...
 		var hull = this.createLineHull(object, line, locals.hull);
+		var hullLines = locals.hullLines;
 
-		// if there is no intersection with the line skip to the next line
-		var point = line.intersection(pathLine, locals.point);
-		if (point === null)
-			continue;
+		hullLines[0] = hull.line;
+		hullLines[1] = hull.line1;
+		hullLines[2] = hull.line2;
 
-		if (this.linesHighlightMode_ === 3)
-			line.active = true;
+		for (var iHullLine = 0; iHullLine < 3; iHullLine++) {
+			var hullLine = hullLines[iHullLine];
 
-		var percent = 0;
-		var dx = dest.x - objectPosition.x;
-		var dy = dest.y - objectPosition.y;
+			// this will be true for floor lines which don't have line1/line2
+			if (!hullLine.hasLength())
+				continue;
 
-		if (Math.abs(dx) > Math.abs(dy))
-			percent = (point.x - objectPosition.x) / dx;
-		else
-			percent = (point.y - objectPosition.y) / dy;
+			// skip collision check if object is not moving towards the line
+			if (direction.dotv(hullLine.normal) > 0)
+				continue;
 
-		if (percent < result.percent) {
-			result.position.x = objectPosition.x + (dest.x - objectPosition.x) * percent;
-			result.position.y = objectPosition.y + (dest.y - objectPosition.y) * percent;
-			
-			// go back kEpsilon to avoid floating point errors
-			result.position.x += Math.cos(invAngle) * kEpsilon;
-			result.position.y += Math.sin(invAngle) * kEpsilon;
-			
-			result.percent = percent;
-			result.collisionLine = line;
+			var point = hullLine.intersection(pathLine, locals.point);
+
+			if (point === null)
+				continue;
+
+			var percent = 0;
+			var dx = dest.x - objectPosition.x;
+			var dy = dest.y - objectPosition.y;
+
+			if (Math.abs(dx) > Math.abs(dy))
+				percent = (point.x - objectPosition.x) / dx;
+			else
+				percent = (point.y - objectPosition.y) / dy;
+
+			if (percent < result.percent) {
+				result.position.x = objectPosition.x + (dest.x - objectPosition.x) * percent;
+				result.position.y = objectPosition.y + (dest.y - objectPosition.y) * percent;
+
+				result.percent = percent;
+				result.collisionHull.assign(hull);
+				result.collisionLineIndex = iHullLine;
+
+				var squareMagnitude = locals.point.assignv(result.position).subtractv(objectPosition).dotv(locals.point);
+
+				if (squareMagnitude < kEpsilon * kEpsilon) {
+					result.percent = 0;
+					result.position.assignv(objectPosition);
+					return;
+				}
+				else {
+					result.position.x += Math.cos(invAngle) * kEpsilon;
+					result.position.y += Math.sin(invAngle) * kEpsilon;
+				}
+			}
 		}
 	}
 }
@@ -201,14 +248,26 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 	});
 
 	var realLine = line;
-	var line = hull.line.assignl(line);
-	var line1 = hull.line1;
-	var line2 = hull.line2;
+	hull.realLine = realLine;
 
+	var line = hull.line.assignl(realLine);
+	line.previous = hull.line1;
+	line.next = hull.line2;
+	line.isFloor = realLine.isFloor;
+
+	var line1 = hull.line1;
 	line1.p1.assignxy(0, 0);
 	line1.p2.assignxy(0, 0);
+	line1.previous = null;
+	line1.next = hull.line;
+	line1.isFloor = realLine.isFloor;
+
+	var line2 = hull.line2;
 	line2.p1.assignxy(0, 0);
 	line2.p2.assignxy(0, 0);
+	line2.previous = hull.line;
+	line2.next = null;
+	line2.isFloor = realLine.isFloor;
 
 	var offset = locals.offset;
 	var rc = object.getBoundingRect(locals.pos.assignxy(0, 0), locals.rc);
@@ -224,11 +283,23 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 			line1.p2.assignxy(line.p1.x, line.p1.y);
 			line1.calculateNormal();
 		}
+		else if (realLine.previous) {
+			line.previous = realLine.previous;
+		}
+		else {
+			line.previous = null;
+		}
 
 		if (!realLine.next || !realLine.next.isFloor) {
 			line2.p1.assignxy(line.p2.x, line.p2.y);
 			line2.p2.assignxy(line.p2.x + offset.l, line.p2.y);
 			line2.calculateNormal();
+		}
+		else if (realLine.next) {
+			line.next = realLine.next;
+		}
+		else {
+			line.next = null;
 		}
 	}
 	else {
@@ -247,6 +318,8 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 			line1.p2.assignxy(line.p1.x, line.p1.y);
 			line2.p1.assignxy(line.p2.x, line.p2.y);
 			line2.p2.assignxy(line.p2.x, line.p2.y + rc.height);
+			line1.isFloor = false;
+			line2.isFloor = false;
 		}
 		else if (line.normal.x === 1) {
 			line.p1.addxy(offset.r, offset.t);
@@ -255,6 +328,7 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 			line1.p2.assignxy(line.p1.x, line.p1.y);
 			line2.p1.assignxy(line.p2.x, line.p2.y);
 			line2.p2.assignxy(line.p2.x - rc.width, line.p2.y);
+			line2.isFloor = true;
 		}
 		else if (line.normal.x === -1) {
 			line.p1.addxy(offset.l, offset.b);
@@ -263,6 +337,7 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 			line1.p2.assignxy(line.p1.x, line.p1.y);
 			line2.p1.assignxy(line.p2.x, line.p2.y);
 			line2.p2.assignxy(line.p2.x + rc.width, line.p2.y);
+			line1.isFloor = true;
 		}
 		else {
 			var dx = line.normal.x > 0 ? offset.r : offset.l;
@@ -282,24 +357,32 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 				line1.p2.assignxy(line.p1.x, line.p1.y);
 				line2.p1.assignxy(line.p2.x, line.p2.y);
 				line2.p2.assignxy(line.p2.x, line.p2.y + rc.height);
+				line1.isFloor = true;
 			}
 			else if (line.normal.x < 0 && line.normal.y > 0) {
-				line1.p1.assignxy(line.p2.x, line.p2.y);
-				line1.p2.assignxy(line.p2.x + rc.width, line.p2.y);
-				line2.p1.assignxy(line.p1.x, line.p1.y - rc.height);
-				line2.p2.assignxy(line.p1.x, line.p1.y);
+				line1.p1.assignxy(line.p1.x, line.p1.y - rc.height);
+				line1.p2.assignxy(line.p1.x, line.p1.y);
+				line2.p1.assignxy(line.p2.x, line.p2.y);
+				line2.p2.assignxy(line.p2.x + rc.width, line.p2.y);
 			}
 			else {
-				line1.p1.assignxy(line.p2.x, line.p2.y);
-				line1.p2.assignxy(line.p2.x - rc.width, line.p2.y);
-				line2.p1.assignxy(line.p1.x, line.p1.y + rc.height);
-				line2.p2.assignxy(line.p1.x, line.p1.y);
+				line1.p1.assignxy(line.p1.x, line.p1.y + rc.height);
+				line1.p2.assignxy(line.p1.x, line.p1.y);
+				line2.p1.assignxy(line.p2.x, line.p2.y);
+				line2.p2.assignxy(line.p2.x - rc.width, line.p2.y);
+				line2.isFloor = true;
 			}
 		}
 
 		line1.calculateNormal();
 		line2.calculateNormal();
 	}
+
+	if (line.previous)
+		assert(line.previous.p2.equalsv(line.p1), "createLineHull: line.previous.p2 != line.p1");
+
+	if (line.next)
+		assert(line.next.p1.equalsv(line.p2), "createLineHull: line.previous.p1 != line.p2");
 
 	return hull;
 }
@@ -308,11 +391,7 @@ Physics.World.prototype.draw = function(context, object) {
 	var locals = this.locals_.draw || (this.locals_.draw = {
 		bounds: new Rectangle(),
 		midpoint: new Vector2(),
-		hull: {
-			line: new Line(),
-			line1: new Line(),
-			line2: new Line()
-		}
+		hull: new Physics.LineHull()
 	});
 
 	context.save();

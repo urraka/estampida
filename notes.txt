@@ -1,4 +1,9 @@
+- Refactor Physics.LineHull to have an array instead of line, line1, line2.
+/ Refactor Physics.WorldLine. Override assign functions, constructor, etc.
 - Remove normal from Line object and refactor as necessary.
+x Physics.World.moveObject: avoid pulling back kEpsilon if kEpsilon is larger than actual movement.
+x Player.move: call createLineHull when necessary.
+x Physics.World.createLineHull: recalculate isFloor for line1/line2.
 x Repeat move logic on player when necessary (collided with something, changed to next floor).
 x Rename Estampida.js to something more generic (nameless).
 x Add main.js instead of embedding code in html.
