@@ -27,7 +27,7 @@ Physics.MoveResult = function() {
 // Physics.World
 
 Physics.World = function(bounds) {
-	this.quadTrees_ = [];
+	this.quadTreeArray_ = null;
 	this.lineStrips_ = [];
 	this.bounds_ = new Rectangle(bounds);
 
@@ -37,57 +37,22 @@ Physics.World = function(bounds) {
 	//   2 = skip out of bounds and opposite direction
 	//   3 = only intersected
 	this.linesHighlightMode_ = 0;
+	this.showCollisionHull_ = true;
 	this.activeLines_ = [];
 
-	var blockSize = 100; // desired size of tree sub-divisions (approximate value)
+	var blockSize = 100;
 	var maxChildren = 5;
-	var n, horizontal, quadsSize, maxDepth;
+	var maxDepth = Math.round(Math.log(Math.min(bounds.width, bounds.height) / blockSize) / Math.LN2);
+	var itemCallbacks = Physics.World.QuadTreeItemCallbacks;
 
-	if (bounds.width > bounds.height) {
-		n = Math.ceil(bounds.width / bounds.height);
-		quadsSize = bounds.height;
-		horizontal = true;
-	}
-	else {
-		n = Math.ceil(bounds.height / bounds.width);
-		quadsSize = bounds.width;
-		horizontal = false;
-	}
-
-	maxDepth = Math.round(Math.log(quadsSize / blockSize) / Math.LN2);
-
-	this.quadTrees_.length = n;
-	bounds.width = quadsSize;
-	bounds.height = quadsSize;
-
-	for (var i = 0; i < n; i++) {
-		this.quadTrees_[i] = new QuadTree(bounds, Physics.World.itemBelongsToRect_, maxDepth, maxChildren);
-
-		if (horizontal)
-			bounds.left += quadsSize;
-		else
-			bounds.top += quadsSize;
-	}
+	this.quadTreeArray_ = new QuadTreeArray(bounds, itemCallbacks, maxDepth, maxChildren);
 }
 
 Physics.World.prototype.locals_ = {};
 
-Physics.World.itemBelongsToRect_ = function(item, bounds) {
-	return bounds.intersectsLine(item.p1, item.p2);
-}
-
-Physics.World.prototype.getTreeIndexMin_ = function(bounds) {
-	if (this.bounds_.width > this.bounds_.height)
-		return Math.max(0, Math.floor((bounds.left - this.bounds_.left) / this.bounds_.height));
-	else
-		return Math.max(0, Math.floor((bounds.top - this.bounds_.top) / this.bounds_.width));
-}
-
-Physics.World.prototype.getTreeIndexMax_ = function(bounds) {
-	if (this.bounds_.width > this.bounds_.height)
-		return Math.min(this.quadTrees_.length - 1, Math.floor((bounds.left + bounds.width - this.bounds_.left) / this.bounds_.height));
-	else
-		return Math.min(this.quadTrees_.length - 1, Math.floor((bounds.top + bounds.height - this.bounds_.top) / this.bounds_.width));
+Physics.World.QuadTreeItemCallbacks = {
+	intersectsRect: function(item, bounds) { return bounds.intersectsLine(item.p1, item.p2); },
+	getBounds: function(item, result) { return item.getBounds(result); }
 }
 
 Physics.World.prototype.addLineStrip = function(points) {
@@ -119,14 +84,7 @@ Physics.World.prototype.addLineStrip = function(points) {
 
 		prevLine = currentLine;
 
-		// add to quadTrees
-
-		var rc = currentLine.getBounds(locals.rc);
-		var iTreeMin = this.getTreeIndexMin_(rc);
-		var iTreeMax = this.getTreeIndexMax_(rc);
-
-		for (var j = iTreeMin; j <= iTreeMax; j++)
-			this.quadTrees_[j].insert(currentLine);
+		this.quadTreeArray_.insert(currentLine);
 	}
 
 	// if the line strip is closed connect its ends
@@ -145,7 +103,12 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 		pathLine: new Line(),
 		point: new Vector2(),
 		rc: new Rectangle(),
-		bounds: new Rectangle()
+		bounds: new Rectangle(),
+		hull: {
+			line: new Line(),
+			line1: new Line(),
+			line2: new Line()
+		}
 	});
 
 	// default result
@@ -155,22 +118,17 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 
 	var objectPosition = object.getPosition();
 	var bounds = locals.bounds;
+	var lines = locals.lines;
+
+	lines.length = 0;
 
 	object.getBoundingRect(objectPosition, bounds);
 	object.getBoundingRect(dest, locals.rc);
 	bounds.expand(locals.rc);
 
-	var nLines = 0;
-	var lines = locals.lines;
-	var iTreeMin = this.getTreeIndexMin_(bounds);
-	var iTreeMax = this.getTreeIndexMax_(bounds);
+	this.quadTreeArray_.retrieve(bounds, lines);
 
-	lines.length = 0;
-
-	for (var i = iTreeMin; i <= iTreeMax; i++)
-		this.quadTrees_[i].retrieve(bounds, lines);
-
-	nLines = lines.length;
+	var nLines = lines.length;
 
 	if (nLines === 0)
 		return;
@@ -178,7 +136,7 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 	var pathLine = locals.pathLine.assignp(objectPosition, dest);
 	var invAngle = Math.PI + locals.point.assignv(dest).subtractv(objectPosition).normalize().angle();
 
-	for (var i = lines.length - 1; i >= 0; i--) {
+	for (var i = 0; i < nLines; i++) {
 		var line = lines[i];
 
 		this.activeLines_.push(line);
@@ -202,6 +160,7 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 			line.active = true;
 
 		// TODO: do the collision hulls calculation...
+		var hull = this.createLineHull(object, line, locals.hull);
 
 		// if there is no intersection with the line skip to the next line
 		var point = line.intersection(pathLine, locals.point);
@@ -234,10 +193,126 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 	}
 }
 
-Physics.World.prototype.draw = function(context) {
+Physics.World.prototype.createLineHull = function(object, line, hull) {
+	var locals = this.locals_.createLineHull || (this.locals_.createLineHull = {
+		rc: new Rectangle(),
+		pos: new Vector2(),
+		offset: { l: 0, r: 0, t: 0, b: 0 }
+	});
+
+	var realLine = line;
+	var line = hull.line.assignl(line);
+	var line1 = hull.line1;
+	var line2 = hull.line2;
+
+	line1.p1.assignxy(0, 0);
+	line1.p2.assignxy(0, 0);
+	line2.p1.assignxy(0, 0);
+	line2.p2.assignxy(0, 0);
+
+	var offset = locals.offset;
+	var rc = object.getBoundingRect(locals.pos.assignxy(0, 0), locals.rc);
+
+	offset.l = rc.left;
+	offset.r = rc.left + rc.width;
+	offset.t = -rc.top;
+	offset.b = -(rc.top + rc.height);
+
+	if (realLine.isFloor) {
+		if (!realLine.previous || !realLine.previous.isFloor) {
+			line1.p1.assignxy(line.p1.x + offset.r, line.p1.y);
+			line1.p2.assignxy(line.p1.x, line.p1.y);
+			line1.calculateNormal();
+		}
+
+		if (!realLine.next || !realLine.next.isFloor) {
+			line2.p1.assignxy(line.p2.x, line.p2.y);
+			line2.p2.assignxy(line.p2.x + offset.l, line.p2.y);
+			line2.calculateNormal();
+		}
+	}
+	else {
+		if (line.normal.y === 1) {
+			line.p1.addxy(offset.l, offset.t);
+			line.p2.addxy(offset.r, offset.t);
+			line1.p1.assignxy(line.p1.x, line.p1.y - rc.height);
+			line1.p2.assignxy(line.p1.x, line.p1.y);
+			line2.p1.assignxy(line.p2.x, line.p2.y);
+			line2.p2.assignxy(line.p2.x, line.p2.y - rc.height);
+		}
+		else if (line.normal.y === -1) {
+			line.p1.addxy(offset.r, offset.b);
+			line.p2.addxy(offset.l, offset.b);
+			line1.p1.assignxy(line.p1.x, line.p1.y + rc.height);
+			line1.p2.assignxy(line.p1.x, line.p1.y);
+			line2.p1.assignxy(line.p2.x, line.p2.y);
+			line2.p2.assignxy(line.p2.x, line.p2.y + rc.height);
+		}
+		else if (line.normal.x === 1) {
+			line.p1.addxy(offset.r, offset.t);
+			line.p2.addxy(offset.r, offset.b);
+			line1.p1.assignxy(line.p1.x - rc.width, line.p1.y);
+			line1.p2.assignxy(line.p1.x, line.p1.y);
+			line2.p1.assignxy(line.p2.x, line.p2.y);
+			line2.p2.assignxy(line.p2.x - rc.width, line.p2.y);
+		}
+		else if (line.normal.x === -1) {
+			line.p1.addxy(offset.l, offset.b);
+			line.p2.addxy(offset.l, offset.t);
+			line1.p1.assignxy(line.p1.x + rc.width, line.p1.y);
+			line1.p2.assignxy(line.p1.x, line.p1.y);
+			line2.p1.assignxy(line.p2.x, line.p2.y);
+			line2.p2.assignxy(line.p2.x + rc.width, line.p2.y);
+		}
+		else {
+			var dx = line.normal.x > 0 ? offset.r : offset.l;
+			var dy = line.normal.y > 0 ? offset.t : offset.b;
+
+			line.p1.addxy(dx, dy);
+			line.p2.addxy(dx, dy);
+
+			if (line.normal.x > 0 && line.normal.y > 0) {
+				line1.p1.assignxy(line.p1.x - rc.width, line.p1.y);
+				line1.p2.assignxy(line.p1.x, line.p1.y);
+				line2.p1.assignxy(line.p2.x, line.p2.y);
+				line2.p2.assignxy(line.p2.x, line.p2.y - rc.height);
+			}
+			else if (line.normal.x < 0 && line.normal.y < 0) {
+				line1.p1.assignxy(line.p1.x + rc.width, line.p1.y);
+				line1.p2.assignxy(line.p1.x, line.p1.y);
+				line2.p1.assignxy(line.p2.x, line.p2.y);
+				line2.p2.assignxy(line.p2.x, line.p2.y + rc.height);
+			}
+			else if (line.normal.x < 0 && line.normal.y > 0) {
+				line1.p1.assignxy(line.p2.x, line.p2.y);
+				line1.p2.assignxy(line.p2.x + rc.width, line.p2.y);
+				line2.p1.assignxy(line.p1.x, line.p1.y - rc.height);
+				line2.p2.assignxy(line.p1.x, line.p1.y);
+			}
+			else {
+				line1.p1.assignxy(line.p2.x, line.p2.y);
+				line1.p2.assignxy(line.p2.x - rc.width, line.p2.y);
+				line2.p1.assignxy(line.p1.x, line.p1.y + rc.height);
+				line2.p2.assignxy(line.p1.x, line.p1.y);
+			}
+		}
+
+		line1.calculateNormal();
+		line2.calculateNormal();
+	}
+
+	return hull;
+}
+
+Physics.World.prototype.draw = function(context, object) {
 	var locals = this.locals_.draw || (this.locals_.draw = {
 		bounds: new Rectangle(),
-		midpoint: new Vector2()
+		midpoint: new Vector2(),
+		hull: {
+			line: new Line(),
+			line1: new Line(),
+			line2: new Line()
+		}
 	});
 
 	context.save();
@@ -260,6 +335,7 @@ Physics.World.prototype.draw = function(context) {
 
 			context.strokeStyle = color;
 
+			// shadow
 			if (current.flag) {
 				context.shadowBlur = 10;
 				context.shadowColor = "#000";
@@ -270,6 +346,7 @@ Physics.World.prototype.draw = function(context) {
 				context.shadowBlur = 0;
 			}
 
+			// normal
 			current.midpoint(locals.midpoint);
 
 			context.beginPath();
@@ -277,10 +354,40 @@ Physics.World.prototype.draw = function(context) {
 			context.lineTo(Math.floor(locals.midpoint.x + current.normal.x * 10), Math.floor(locals.midpoint.y + current.normal.y * 10));
 			context.stroke();
 
+			// line
 			context.beginPath();
 			context.moveTo(Math.floor(current.p1.x), Math.floor(current.p1.y));
 			context.lineTo(Math.floor(current.p2.x), Math.floor(current.p2.y));
 			context.stroke();
+
+			// hull
+			if (object && this.showCollisionHull_ && current.active) {
+				var hull = this.createLineHull(object, current, locals.hull);
+
+				context.lineWidth = 1;
+				context.strokeStyle = "rgba(0,0,255,0.4)";
+
+				context.beginPath();
+				context.moveTo(Math.floor(hull.line.p1.x), Math.floor(hull.line.p1.y));
+				context.lineTo(Math.floor(hull.line.p2.x), Math.floor(hull.line.p2.y));
+				context.stroke();
+
+				if (hull.line1.hasLength()) {
+					context.beginPath();
+					context.moveTo(Math.floor(hull.line1.p1.x), Math.floor(hull.line1.p1.y));
+					context.lineTo(Math.floor(hull.line1.p2.x), Math.floor(hull.line1.p2.y));
+					context.stroke();
+				}
+
+				if (hull.line2.hasLength()) {
+					context.beginPath();
+					context.moveTo(Math.floor(hull.line2.p1.x), Math.floor(hull.line2.p1.y));
+					context.lineTo(Math.floor(hull.line2.p2.x), Math.floor(hull.line2.p2.y));
+					context.stroke();
+				}
+
+				context.lineWidth = 2;
+			}
 
 			if (current.next !== first)
 				current = current.next;
@@ -291,22 +398,23 @@ Physics.World.prototype.draw = function(context) {
 
 	// draw quad trees
 
-	var len = this.quadTrees_.length;
+	var quadTrees = this.quadTreeArray_.quadTrees_;
+	var len = quadTrees.length;
 
 	if (len > 0) {
 		context.strokeStyle = "rgba(0,0,0,0.5)";
 		context.lineWidth = 1;
 
 		for (var i = 0; i < len; i++) {
-			this.drawQuadTreeNode(context, this.quadTrees_[i].root_);
+			this.drawQuadTreeNode(context, quadTrees[i].root_);
 
 			if (i === 0)
-				locals.bounds.assign(this.quadTrees_[i].root_.bounds_);
+				locals.bounds.assign(quadTrees[i].root_.bounds_);
 			else
-				locals.bounds.expand(this.quadTrees_[i].root_.bounds_);
+				locals.bounds.expand(quadTrees[i].root_.bounds_);
 
 			if (i < len - 1) {
-				var bounds = this.quadTrees_[i].root_.bounds_;
+				var bounds = quadTrees[i].root_.bounds_;
 
 				context.beginPath();
 	

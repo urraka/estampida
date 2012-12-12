@@ -161,7 +161,7 @@ Level.prototype.draw = function(context) {
 	context.fillStyle = "#CCC";
 	context.fillRect(0, 0, this.viewRect_.width, this.viewRect_.height);
 	context.translate(-Math.floor(this.viewRect_.left), -Math.floor(this.viewRect_.top));
-	this.world.draw(context);
+	this.world.draw(context, this.player2);
 	//this.map2.draw(context);
 	this.player2.draw(context);
 
