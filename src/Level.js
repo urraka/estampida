@@ -86,7 +86,7 @@ function Level() {
 		]
 	];
 
-	var lineStrips = lineStrips2;
+	var lineStrips = lineStrips1;
 
 	var line = new Line();
 	var rc = new Rectangle();
@@ -145,7 +145,12 @@ Level.prototype.draw = function(context) {
     background.addColorStop(1, "#FFF");
 
 	context.save();
-	context.fillStyle = background; //"#CCC";
+
+	if (this.debugMode)
+		context.fillStyle = "#CCC";
+	else
+		context.fillStyle = background;
+
 	context.fillRect(0, 0, this.viewRect_.width, this.viewRect_.height);
 	context.translate(-Math.floor(this.viewRect_.left), -Math.floor(this.viewRect_.top));
 
