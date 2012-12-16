@@ -200,6 +200,13 @@ Player2.prototype.jump = function(jumpVel, walkSpeed) {
 	}
 }
 
+Player2.prototype.spawn = function(world, x, y) {
+	this.world_ = world;
+	this.position_.assignxy(x, y);
+	this.previousPosition_.assignxy(x, y);
+	this.touchedLine_ = null;
+}
+
 Player2.prototype.getBoundingRect = function(position, rc) {
 	rc.width = 34;
 	rc.height = 80;

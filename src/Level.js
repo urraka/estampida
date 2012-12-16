@@ -86,28 +86,9 @@ function Level() {
 		]
 	];
 
-	var lineStrips = lineStrips1;
-
-	var line = new Line();
-	var rc = new Rectangle();
-	var bounds = new Rectangle(lineStrips[0][0].x, lineStrips[0][0].y, 0, 0);
-	
-	for (var iStrip = 0; iStrip < lineStrips.length; iStrip++) {
-		var lineStrip = lineStrips[iStrip];
-		var nLines = lineStrip.length;
-		for (var i = 0; i < nLines - 2; i++) {
-			line.assignp(lineStrip[i], lineStrip[i + 1]);
-			bounds.expand(line.getBounds(rc));
-		}
-	}
-
-	this.world = new Physics.World(bounds);
-
-	for (var i = 0; i < lineStrips.length; i++)
-		this.world.addLineStrip(lineStrips[i]);
-
-	this.player2.world_ = this.world;
-	this.lineStrips = lineStrips;
+	this.world = null;
+	this.maps = [lineStrips1, lineStrips2];
+	this.setMap(this.maps[0]);
 	this.debugMode = false;
 }
 
@@ -119,6 +100,31 @@ Level.prototype.updateViewSize = function(size) {
 	this.viewRect_.height = size.y;
 }
 
+Level.prototype.setMap = function(map) {
+	this.world = null;
+
+	var line = new Line();
+	var rc = new Rectangle();
+	var bounds = new Rectangle(map[0][0].x, map[0][0].y, 0, 0);
+	
+	for (var iStrip = 0; iStrip < map.length; iStrip++) {
+		var lineStrip = map[iStrip];
+		var nLines = lineStrip.length;
+		for (var i = 0; i < nLines - 2; i++) {
+			line.assignp(lineStrip[i], lineStrip[i + 1]);
+			bounds.expand(line.getBounds(rc));
+		}
+	}
+
+	this.world = new Physics.World(bounds);
+
+	for (var i = 0; i < map.length; i++)
+		this.world.addLineStrip(map[i]);
+
+	this.lineStrips = map;
+	this.player2.spawn(this.world, 200, 400);
+}
+
 Level.prototype.onKeyChanged = function(key, isKeyDown) {
 	if (isKeyDown) {
 		if (key === Keyboard.Space)
@@ -126,6 +132,12 @@ Level.prototype.onKeyChanged = function(key, isKeyDown) {
 
 		if (key === Keyboard.D)
 			this.debugMode = !this.debugMode;
+
+		if (key === Keyboard.Num1)
+			this.setMap(this.maps[0]);
+
+		if (key === Keyboard.Num2)
+			this.setMap(this.maps[1]);
 	}
 }
 
