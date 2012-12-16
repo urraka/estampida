@@ -107,6 +107,8 @@ function Level() {
 		this.world.addLineStrip(lineStrips[i]);
 
 	this.player2.world_ = this.world;
+	this.lineStrips = lineStrips;
+	this.debugMode = false;
 }
 
 Level.prototype.loadMap = function(name) {
@@ -121,6 +123,9 @@ Level.prototype.onKeyChanged = function(key, isKeyDown) {
 	if (isKeyDown) {
 		if (key === Keyboard.Space)
 			this.player2.slowMotion = !this.player2.slowMotion;
+
+		if (key === Keyboard.D)
+			this.debugMode = !this.debugMode;
 	}
 }
 
@@ -135,11 +140,61 @@ Level.prototype.interpolate = function(alpha) {
 }
 
 Level.prototype.draw = function(context) {
+	var background = context.createLinearGradient(0, 0, 0, this.viewRect_.height);
+    background.addColorStop(0, "#00F");
+    background.addColorStop(1, "#FFF");
+
 	context.save();
-	context.fillStyle = "#CCC";
+	context.fillStyle = background; //"#CCC";
 	context.fillRect(0, 0, this.viewRect_.width, this.viewRect_.height);
 	context.translate(-Math.floor(this.viewRect_.left), -Math.floor(this.viewRect_.top));
-	this.world.draw(context, this.player2);
-	this.player2.draw(context);
+
+	if (this.debugMode)
+		this.world.draw(context, this.player2);
+	else
+		this.drawMap(context);
+
+	this.player2.draw(context, this.debugMode);
 	context.restore();
+}
+
+Level.prototype.drawMap = function(context) {
+	var texture = Resources.images["mapTexture"];
+	var ground = context.createPattern(texture, "repeat");
+	
+	context.fillStyle = ground;
+
+	var lineStrip = this.lineStrips[0];
+	var len = lineStrip.length;
+	var size = Math.max(this.viewRect_.width, this.viewRect_.height);
+	
+	context.beginPath();
+	context.moveTo(lineStrip[0].x, lineStrip[0].y);
+
+	for (var i = 1; i < len; i++)
+		context.lineTo(lineStrip[i].x, lineStrip[i].y);
+
+	context.lineTo(this.world.bounds_.left - size, lineStrip[len - 1].y);
+	context.lineTo(this.world.bounds_.left - size, this.world.bounds_.top + this.world.bounds_.height + size);
+	context.lineTo(this.world.bounds_.left + this.world.bounds_.width + size, this.world.bounds_.top + this.world.bounds_.height + size);
+	context.lineTo(this.world.bounds_.left + this.world.bounds_.width + size, this.world.bounds_.top - size);
+	context.lineTo(this.world.bounds_.left - size, this.world.bounds_.top - size);
+	context.lineTo(this.world.bounds_.left - size, lineStrip[len - 1].y);
+	context.closePath();
+	context.fill();
+
+	var lenStrips = this.lineStrips.length;
+
+	for (var iStrip = 1; iStrip < lenStrips; iStrip++) {
+		var lineStrip = this.lineStrips[iStrip];
+		var len = lineStrip.length;
+
+		context.beginPath();
+		context.moveTo(lineStrip[0].x, lineStrip[0].y);
+
+		for (var i = 1; i < len; i++)
+			context.lineTo(lineStrip[i].x, lineStrip[i].y);
+
+		context.fill();
+	}
 }
