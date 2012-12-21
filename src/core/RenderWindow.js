@@ -51,8 +51,10 @@ RenderWindow.prototype.getSize = function(size) {
 		size.y = $canvas.height();
 	}
 	else {
-		return new Vector2($canvas.width(), $canvas.height());
+		size = new Vector2($canvas.width(), $canvas.height());
 	}
+
+	return size;
 }
 
 RenderWindow.prototype.onResize = function(owner, callback) {

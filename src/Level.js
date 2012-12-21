@@ -1,10 +1,16 @@
 function Level() {
-	this.viewRect_ = new Rectangle();
+	this.debugMode = false;
 	this.player2 = new Player2();
+	this.camera = new Camera();
+	this.world = null;
+	this.maps = null;
+	this.slowMotion = false;
 
 	Keyboard.bind(this, this.onKeyChanged);
 
 	// create world object
+
+	var svg2json = {"lineStrips":[[{"x":-600,"y":935},{"x":-770,"y":-33},{"x":-569,"y":8},{"x":-151,"y":-73},{"x":287,"y":-58},{"x":1033,"y":20},{"x":1360,"y":-20},{"x":1477,"y":442},{"x":1419,"y":677},{"x":1323,"y":792},{"x":1333,"y":890},{"x":1417,"y":1075},{"x":1176,"y":1104},{"x":949,"y":1030},{"x":-477,"y":1058},{"x":-600,"y":935}],[{"x":479,"y":764},{"x":564,"y":788},{"x":667,"y":769},{"x":839,"y":721},{"x":834,"y":659},{"x":724,"y":627},{"x":631,"y":656},{"x":479,"y":764}],[{"x":220,"y":565},{"x":105,"y":536},{"x":-30,"y":568},{"x":-36,"y":630},{"x":176,"y":678},{"x":303,"y":697},{"x":407,"y":673},{"x":220,"y":565}],[{"x":414,"y":553},{"x":499,"y":577},{"x":602,"y":558},{"x":774,"y":510},{"x":769,"y":448},{"x":659,"y":416},{"x":566,"y":445},{"x":414,"y":553}],[{"x":751,"y":1047},{"x":654,"y":971},{"x":521,"y":900},{"x":404,"y":890},{"x":250,"y":894},{"x":6,"y":941},{"x":-107,"y":1028},{"x":-150,"y":1108},{"x":751,"y":1047}],[{"x":427,"y":914},{"x":421,"y":822},{"x":257,"y":818},{"x":270,"y":932},{"x":427,"y":914}],[{"x":936,"y":445},{"x":914,"y":508},{"x":929,"y":560},{"x":983,"y":685},{"x":1139,"y":891},{"x":1237,"y":930},{"x":1044,"y":380},{"x":936,"y":445}],[{"x":-533,"y":480},{"x":-474,"y":540},{"x":-391,"y":531},{"x":-314,"y":490},{"x":-220,"y":545},{"x":-139,"y":560},{"x":-151,"y":502},{"x":-173,"y":467},{"x":-160,"y":448},{"x":-111,"y":445},{"x":-30,"y":492},{"x":13,"y":498},{"x":30,"y":481},{"x":-10,"y":462},{"x":-30,"y":424},{"x":-181,"y":364},{"x":-251,"y":370},{"x":-253,"y":321},{"x":-297,"y":302},{"x":-353,"y":254},{"x":-430,"y":194},{"x":-491,"y":197},{"x":-563,"y":214},{"x":-596,"y":240},{"x":-533,"y":480}]]};
 
 	var lineStrips1 = [
 		[
@@ -86,18 +92,18 @@ function Level() {
 		]
 	];
 
-	this.world = null;
-	this.maps = [lineStrips1, lineStrips2];
-	this.setMap(this.maps[0]);
-	this.debugMode = false;
+	this.maps = [lineStrips1, lineStrips2, svg2json["lineStrips"]];
+	this.setMap(this.maps[1]);
+	this.camera.setObjective(this.player2);
+	this.camera.moveToObjective();
+	
 }
 
 Level.prototype.loadMap = function(name) {
 }
 
 Level.prototype.updateViewSize = function(size) {
-	this.viewRect_.width = size.x;
-	this.viewRect_.height = size.y;
+	this.camera.updateViewSize(size.x, size.y);
 }
 
 Level.prototype.setMap = function(map) {
@@ -123,12 +129,13 @@ Level.prototype.setMap = function(map) {
 
 	this.lineStrips = map;
 	this.player2.spawn(this.world, 200, 400);
+	this.camera.moveToObjective();
 }
 
 Level.prototype.onKeyChanged = function(key, isKeyDown) {
 	if (isKeyDown) {
 		if (key === Keyboard.Space)
-			this.player2.slowMotion = !this.player2.slowMotion;
+			this.slowMotion = !this.slowMotion;
 
 		if (key === Keyboard.D)
 			this.debugMode = !this.debugMode;
@@ -138,21 +145,29 @@ Level.prototype.onKeyChanged = function(key, isKeyDown) {
 
 		if (key === Keyboard.Num2)
 			this.setMap(this.maps[1]);
+
+		if (key === Keyboard.Num3)
+			this.setMap(this.maps[2]);
 	}
 }
 
 Level.prototype.update = function(dt) {
+	if (this.slowMotion)
+		dt /= 5;
+
 	this.player2.update(dt);
+	this.camera.update(dt);
 }
 
 Level.prototype.interpolate = function(alpha) {
 	this.player2.interpolate(alpha);
-	this.viewRect_.left = Math.floor(this.player2.drawPosition_.x - this.viewRect_.width / 2);
-	this.viewRect_.top = Math.floor(this.player2.drawPosition_.y - this.viewRect_.height / 2);
+	this.camera.interpolate(alpha);
 }
 
 Level.prototype.draw = function(context) {
-	var background = context.createLinearGradient(0, 0, 0, this.viewRect_.height);
+	var view = this.camera.getView();
+
+	var background = context.createLinearGradient(0, 0, 0, view.height);
     background.addColorStop(0, "#00F");
     background.addColorStop(1, "#FFF");
 
@@ -163,8 +178,8 @@ Level.prototype.draw = function(context) {
 	else
 		context.fillStyle = background;
 
-	context.fillRect(0, 0, this.viewRect_.width, this.viewRect_.height);
-	context.translate(-Math.floor(this.viewRect_.left), -Math.floor(this.viewRect_.top));
+	context.fillRect(0, 0, view.width, view.height);
+	context.translate(-Math.floor(view.left), -Math.floor(view.top));
 
 	if (this.debugMode)
 		this.world.draw(context, this.player2);
@@ -176,6 +191,7 @@ Level.prototype.draw = function(context) {
 }
 
 Level.prototype.drawMap = function(context) {
+	var view = this.camera.getView();
 	var texture = Resources.images["mapTexture"];
 	var ground = context.createPattern(texture, "repeat");
 	
@@ -183,7 +199,7 @@ Level.prototype.drawMap = function(context) {
 
 	var lineStrip = this.lineStrips[0];
 	var len = lineStrip.length;
-	var size = Math.max(this.viewRect_.width, this.viewRect_.height);
+	var size = Math.max(view.width, view.height);
 	
 	context.beginPath();
 	context.moveTo(lineStrip[0].x, lineStrip[0].y);

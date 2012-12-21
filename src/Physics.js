@@ -1,6 +1,6 @@
 Physics = {};
 
-Physics.kMaxFloorSlope = 5;
+Physics.kMaxFloorSlope = 2;
 
 // Physics.WorldLine : Line
 
