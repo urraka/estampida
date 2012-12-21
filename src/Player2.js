@@ -13,7 +13,6 @@ function Player2() {
 	this.color_ = "rgba(255, 255, 0, 0.5)";
 	this.touchedLine_ = null;
 	this.touchedHull_ = new Physics.LineHull();
-	this.wall = false;
 
 	var kGravity = 9.8 * 150;
 	this.acceleration_ = new Vector2(0, kGravity);
@@ -25,9 +24,6 @@ Player2.prototype.locals_ = {};
 
 Player2.prototype.update = function(dt) {
 	this.previousPosition_.assignv(this.position_); // used for frame interpolation
-
-	if (this.slowMotion)
-		dt /= 5;
 
 	var kWalkVel = 250;
 	var kJumpVel = -550;
@@ -147,9 +143,12 @@ Player2.prototype.move = function(dt, recursionCount) {
 
 		if (this.velocity_.dotv(line.normal) < 0) {
 			var dir = locals.dir.assignv(line.p2).subtractv(line.p1).normalize();
-			magnitude = dir.dotv(this.velocity_);
-			this.velocity_.assignv(dir.multiply(magnitude));
-			vel.assignv(this.velocity_).multiply(dt);
+			var magnitude = dir.dotv(this.velocity_);
+			dir.multiply(magnitude);
+			vel.assignv(dir).multiply(dt);
+
+			if (line.normal.dotxy(0, -1) <= 0)
+				this.velocity_.assignv(dir);
 		}
 		else {
 			vel.x = 0;
@@ -162,9 +161,6 @@ Player2.prototype.move = function(dt, recursionCount) {
 		this.position_.assignv(moveResult.position);
 
 		if (moveResult.collisionLineIndex !== -1) {
-			if (line && line.isFloor && !moveResult.collisionHull.getLine(moveResult.collisionLineIndex).isFloor)
-				this.wall = true;
-
 			if (line) this.touchedHull_.realLine.flag = false;
 			this.touchedHull_.assign(moveResult.collisionHull);
 			line = this.touchedHull_.getLine(moveResult.collisionLineIndex);
@@ -204,6 +200,7 @@ Player2.prototype.spawn = function(world, x, y) {
 	this.world_ = world;
 	this.position_.assignxy(x, y);
 	this.previousPosition_.assignxy(x, y);
+	this.velocity_.assignxy(0, 0);
 	this.touchedLine_ = null;
 }
 

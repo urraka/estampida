@@ -75,7 +75,7 @@ GameBase.prototype.mainLoop = function() {
 			var context = self.renderWindow_.getContext();
 			context.save();
 			context.fillStyle = "#000";
-			context.font = "12px verdana";
+			context.font = "bold 12px verdana";
 			context.textBaseline = "top";
 			context.fillText("FPS: " + self.fps_, 10, 10);
 			context.restore();
