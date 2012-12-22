@@ -250,6 +250,9 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 	var realLine = line;
 	hull.realLine = realLine;
 
+	var isPreviousFloor = realLine.previous && realLine.previous.isFloor;
+	var isNextFloor = realLine.next && realLine.next.isFloor;
+
 	var line = hull.line.assignl(realLine);
 	line.previous = hull.line1;
 	line.next = hull.line2;
@@ -326,18 +329,25 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 			line.p2.addxy(offset.r, offset.b);
 			line1.p1.assignxy(line.p1.x - rc.width, line.p1.y);
 			line1.p2.assignxy(line.p1.x, line.p1.y);
-			line2.p1.assignxy(line.p2.x, line.p2.y);
-			line2.p2.assignxy(line.p2.x - rc.width, line.p2.y);
-			line2.isFloor = true;
+
+			if (!isNextFloor) {
+				line2.p1.assignxy(line.p2.x, line.p2.y);
+				line2.p2.assignxy(line.p2.x - rc.width, line.p2.y);
+				line2.isFloor = true;
+			}
 		}
 		else if (line.normal.x === -1) {
 			line.p1.addxy(offset.l, offset.b);
 			line.p2.addxy(offset.l, offset.t);
-			line1.p1.assignxy(line.p1.x + rc.width, line.p1.y);
-			line1.p2.assignxy(line.p1.x, line.p1.y);
+
+			if (!isPreviousFloor) {
+				line1.p1.assignxy(line.p1.x + rc.width, line.p1.y);
+				line1.p2.assignxy(line.p1.x, line.p1.y);
+				line1.isFloor = true;
+			}
+
 			line2.p1.assignxy(line.p2.x, line.p2.y);
 			line2.p2.assignxy(line.p2.x + rc.width, line.p2.y);
-			line1.isFloor = true;
 		}
 		else {
 			var dx = line.normal.x > 0 ? offset.r : offset.l;
@@ -353,11 +363,14 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 				line2.p2.assignxy(line.p2.x, line.p2.y - rc.height);
 			}
 			else if (line.normal.x < 0 && line.normal.y < 0) {
-				line1.p1.assignxy(line.p1.x + rc.width, line.p1.y);
-				line1.p2.assignxy(line.p1.x, line.p1.y);
+				if (!isPreviousFloor) {
+					line1.p1.assignxy(line.p1.x + rc.width, line.p1.y);
+					line1.p2.assignxy(line.p1.x, line.p1.y);
+					line1.isFloor = true;
+				}
+
 				line2.p1.assignxy(line.p2.x, line.p2.y);
 				line2.p2.assignxy(line.p2.x, line.p2.y + rc.height);
-				line1.isFloor = true;
 			}
 			else if (line.normal.x < 0 && line.normal.y > 0) {
 				line1.p1.assignxy(line.p1.x, line.p1.y - rc.height);
@@ -368,9 +381,12 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 			else {
 				line1.p1.assignxy(line.p1.x, line.p1.y + rc.height);
 				line1.p2.assignxy(line.p1.x, line.p1.y);
-				line2.p1.assignxy(line.p2.x, line.p2.y);
-				line2.p2.assignxy(line.p2.x - rc.width, line.p2.y);
-				line2.isFloor = true;
+
+				if (!isNextFloor) {
+					line2.p1.assignxy(line.p2.x, line.p2.y);
+					line2.p2.assignxy(line.p2.x - rc.width, line.p2.y);
+					line2.isFloor = true;
+				}
 			}
 		}
 
