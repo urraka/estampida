@@ -55,7 +55,7 @@ Player2.prototype.update = function(dt) {
 			this.animation_.set("standing");
 		}
 	}
-	else if (Math.abs(this.position_.y - this.previousPosition_.y) >= kEpsilon) {
+	else {
 		this.animation_.set("jumping");
 	}
 
@@ -68,7 +68,7 @@ Player2.prototype.move = function(dt, recursionCount) {
 		moveResult: new Physics.MoveResult(),
 		dest: new Vector2(),
 		vel: new Vector2(),
-		dir: new Vector2()
+		newVel: new Vector2()
 	});
 
 	recursionCount = recursionCount || 0;
@@ -139,19 +139,19 @@ Player2.prototype.move = function(dt, recursionCount) {
 	else if (line) {
 		// handle wall/roof collision
 
-		this.velocity_.x = 0;
-
 		if (this.velocity_.dotv(line.normal) < 0) {
-			var dir = locals.dir.assignv(line.p2).subtractv(line.p1).normalize();
-			var magnitude = dir.dotv(this.velocity_);
-			dir.multiply(magnitude);
-			vel.assignv(dir).multiply(dt);
+			var newVel = locals.newVel.assignv(line.p2).subtractv(line.p1).normalize();
+			var magnitude = newVel.dotv(this.velocity_);
+			newVel.multiply(magnitude);
+
+			// avoid speeding up because of velocity.x, cap on velocity.y
+			if (Math.abs(newVel.y) > Math.abs(this.velocity_.y))
+				newVel.multiply(Math.abs(this.velocity_.y / newVel.y));
+
+			vel.assignv(newVel).multiply(dt);
 
 			if (line.normal.dotxy(0, -1) <= 0)
-				this.velocity_.assignv(dir);
-		}
-		else {
-			vel.x = 0;
+				this.velocity_.assignv(newVel);
 		}
 	}
 
@@ -161,6 +161,11 @@ Player2.prototype.move = function(dt, recursionCount) {
 		this.position_.assignv(moveResult.position);
 
 		if (moveResult.collisionLineIndex !== -1) {
+			if (line && line.isFloor && !moveResult.collisionHull.getLine(moveResult.collisionLineIndex).isFloor) {
+				this.velocity_.x = 0;
+				return;
+			}
+
 			if (line) this.touchedHull_.realLine.flag = false;
 			this.touchedHull_.assign(moveResult.collisionHull);
 			line = this.touchedHull_.getLine(moveResult.collisionLineIndex);
@@ -183,15 +188,33 @@ Player2.prototype.move = function(dt, recursionCount) {
 }
 
 Player2.prototype.jump = function(jumpVel, walkSpeed) {
+	var locals = this.locals_.jump || (this.locals_.jump = {
+		dest: new Vector2(),
+		moveResult: new Physics.MoveResult()
+	});
+
+	// 1. check if we're in the floor
+	// 2. if we're walking check that the floor slope is not higher than what we can jump (avoids getting blocked)
+	// 3. check if there's enough space to jump testing for collision 1 unit above us (helps choosing the current graphic/animation)
+	// 4. if there's a collision check if the collision line has a reasonable slope to let us jump
+
 	if (this.touchedLine_ && this.touchedLine_.isFloor) {
 		var slope = this.touchedLine_.slope();
 
-		if (walkSpeed === 0 || slope === 0 ||
-			(slope > 0 && (walkSpeed > 0 || jumpVel / walkSpeed > slope)) ||
-			(slope < 0 && (walkSpeed < 0 || jumpVel / walkSpeed < slope))) {
-			this.velocity_.y = jumpVel;
-			this.touchedHull_.realLine.flag = false;
-			this.touchedLine_ = null; // detach from floor
+		if (walkSpeed === 0 || slope === 0 || (slope > 0 && (walkSpeed > 0 || jumpVel / walkSpeed > slope)) || (slope < 0 && (walkSpeed < 0 || jumpVel / walkSpeed < slope))) {
+
+			var result = locals.moveResult;
+			var dest = locals.dest.assignv(this.position_).addxy(0, -1);
+
+			this.world_.moveObject(this, dest, result);
+
+			var line = result.collisionHull.getLine(result.collisionLineIndex);
+
+			if (!line || Math.abs(line.slope()) > 1) {
+				this.velocity_.y = jumpVel;
+				this.touchedHull_.realLine.flag = false;
+				this.touchedLine_ = null; // detach from floor
+			}
 		}
 	}
 }
@@ -206,9 +229,9 @@ Player2.prototype.spawn = function(world, x, y) {
 
 Player2.prototype.getBoundingRect = function(position, rc) {
 	rc.width = 34;
-	rc.height = 80;
+	rc.height = 76;
 	rc.left = position.x - 17;
-	rc.top = position.y - this.origin_.y;
+	rc.top = position.y - this.origin_.y + 4;
 	return rc;
 }
 

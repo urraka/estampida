@@ -394,10 +394,10 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 		line2.calculateNormal();
 	}
 
-	if (line.previous)
+	if (line.previous.hasLength())
 		assert(line.previous.p2.equalsv(line.p1), "createLineHull: line.previous.p2 != line.p1");
 
-	if (line.next)
+	if (line.next.hasLength())
 		assert(line.next.p1.equalsv(line.p2), "createLineHull: line.previous.p1 != line.p2");
 
 	return hull;

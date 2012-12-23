@@ -1,9 +1,13 @@
-/ Fix collision hull on intersection between wall and floor line.
-  - Test polygons with axis aligned edges. Try different cases of triangles.
 - Change Animation so it doesn't use Resources. Use whatever resources contain instead.
 - Refactor Physics.LineHull to have an array instead of line, line1, line2.
-/ Refactor Physics.WorldLine. Override assign functions, constructor, etc.
 - Remove normal from Line object and refactor as necessary.
+/ Refactor Physics.WorldLine. Override assign functions, constructor, etc.
+x Fix speeding up on some wall collisions (velocity.x effect).
+x Check if it's necessary to return percent from Player2.move().
+x Finish jump checking.
+x Fix detection of animation.
+x Fix collision hull on intersection between wall and floor line.
+  x Test polygons with axis aligned edges. Try different cases of triangles.
 x Physics.World.moveObject: avoid pulling back kEpsilon if kEpsilon is larger than actual movement.
 x Player.move: call createLineHull when necessary.
 x Physics.World.createLineHull: recalculate isFloor for line1/line2.
