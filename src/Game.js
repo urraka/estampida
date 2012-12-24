@@ -18,7 +18,7 @@ Game.prototype.initialize = function() {
 	this.setState(new Loading());
 
 	var imagesInfo = [
-		{ id: "perro", src: "images/perro2.png" },
+		{ id: "perro", src: "images/perro3.png" },
 		{ id: "map", src: "images/map.png" },
 		{ id: "mapTexture", src: "images/SandyHopscotch.png" },
 		{ id: "controller", src: "images/controller.png" }
@@ -73,33 +73,24 @@ Game.prototype.initialize = function() {
 		]
 	};
 
-	/*Resources.animations["standing"] = {
-		frameWidth: 52,
-		frameHeight: 80,
+	Resources.animations["ducking"] = {
+		frameWidth: 54,
+		frameHeight: 82,
 		frameDuration: 0,
 		frames: [
-			{ left: 0, top: 0 }
+			{ left: 212, top: 0 }
 		]
 	};
 
-	Resources.animations["walking"] = {
-		frameWidth: 52,
-		frameHeight: 80,
+	Resources.animations["duckWalking"] = {
+		frameWidth: 54,
+		frameHeight: 82,
 		frameDuration: 0.1,
 		frames: [
-			{ left: 52, top: 0 },
-			{ left: 104, top: 0 }
+			{ left: 265, top: 0 },
+			{ left: 318, top: 0 }
 		]
 	};
-
-	Resources.animations["jumping"] = {
-		frameWidth: 52,
-		frameHeight: 80,
-		frameDuration: 0,
-		frames: [
-			{ left: 52, top: 0 }
-		]
-	};*/
 }
 
 Game.prototype.windowResize = function(size) {

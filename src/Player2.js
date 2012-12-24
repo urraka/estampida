@@ -18,6 +18,8 @@ function Player2() {
 	this.acceleration_ = new Vector2(0, kGravity);
 	this.position_.assignxy(200, 400);
 	this.origin_.assignxy(26, 80);
+
+	this.ducking_ = false;
 }
 
 Player2.prototype.locals_ = {};
@@ -25,7 +27,12 @@ Player2.prototype.locals_ = {};
 Player2.prototype.update = function(dt) {
 	this.previousPosition_.assignv(this.position_); // used for frame interpolation
 
-	var kWalkVel = 300;
+	if (Controller.isPressed(Controller.Duck))
+		this.duck(true);
+	else
+		this.duck(false);
+
+	var kWalkVel = this.ducking_ ? 150 : 300;
 	var kJumpVel = -550;
 
 	this.velocity_.x = 0;
@@ -45,14 +52,22 @@ Player2.prototype.update = function(dt) {
 
 	this.move(dt);
 
+	var animStanding = "standing";
+	var animWalking = "walking";
+
+	if (this.ducking_) {
+		animStanding = "ducking";
+		animWalking = "duckWalking";
+	}
+
 	if (this.touchedLine_ && this.touchedLine_.isFloor) {
 		if (this.velocity_.x != 0) {
-			if (!this.animation_.is("walking")) {
-				this.animation_.set("walking", 1);
+			if (!this.animation_.is(animWalking)) {
+				this.animation_.set(animWalking, 1);
 			}
 		}
 		else {
-			this.animation_.set("standing");
+			this.animation_.set(animStanding);
 		}
 	}
 	else {
@@ -193,12 +208,12 @@ Player2.prototype.jump = function(jumpVel, walkSpeed) {
 		moveResult: new Physics.MoveResult()
 	});
 
-	// 1. check if we're in the floor
+	// 1. check that we're in the floor and we're not ducking
 	// 2. if we're walking check that the floor slope is not higher than what we can jump (avoids getting blocked)
 	// 3. check if there's enough space to jump testing for collision 1 unit above us (helps choosing the current graphic/animation)
 	// 4. if there's a collision check if the collision line has a reasonable slope to let us jump
 
-	if (this.touchedLine_ && this.touchedLine_.isFloor) {
+	if (!this.ducking_ && this.touchedLine_ && this.touchedLine_.isFloor) {
 		var slope = this.touchedLine_.slope();
 
 		if (walkSpeed === 0 || slope === 0 || (slope > 0 && (walkSpeed > 0 || jumpVel / walkSpeed > slope)) || (slope < 0 && (walkSpeed < 0 || jumpVel / walkSpeed < slope))) {
@@ -219,6 +234,45 @@ Player2.prototype.jump = function(jumpVel, walkSpeed) {
 	}
 }
 
+Player2.prototype.duck = function(shouldDuck) {
+	var locals = this.locals_.duck || (this.locals_.duck = {
+		bounds: new Rectangle(),
+		dest: new Vector2(),
+		moveResult: new Physics.MoveResult()
+	});
+
+	if (this.ducking_ === shouldDuck)
+		return;
+
+	if (shouldDuck && this.touchedLine_ && this.touchedLine_.isFloor) {
+		this.ducking_ = true;
+	}
+	else if (!shouldDuck) {
+		var bounds = locals.bounds;
+		var normalHeight = 0;
+		var duckedHeight = 0;
+
+		this.ducking_ = false;
+
+		this.getBoundingRect(this.position_, bounds);
+		normalHeight = bounds.height;
+
+		this.ducking_ = true;
+
+		this.getBoundingRect(this.position_, bounds);
+		duckedHeight = bounds.height;
+
+		var result = locals.moveResult;
+		var dest = locals.dest.assignv(this.position_).subtractxy(0, normalHeight - duckedHeight);
+
+		this.world_.moveObject(this, dest, result);
+
+		if (result.collisionLineIndex === -1) {
+			this.ducking_ = false;
+		}
+	}
+}
+
 Player2.prototype.spawn = function(world, x, y) {
 	this.world_ = world;
 	this.position_.assignxy(x, y);
@@ -229,9 +283,9 @@ Player2.prototype.spawn = function(world, x, y) {
 
 Player2.prototype.getBoundingRect = function(position, rc) {
 	rc.width = 34;
-	rc.height = 76;
-	rc.left = position.x - 17;
-	rc.top = position.y - this.origin_.y + 4;
+	rc.height = this.ducking_ ? 60 : 76;
+	rc.left = position.x - rc.width / 2;
+	rc.top = position.y - rc.height;
 	return rc;
 }
 

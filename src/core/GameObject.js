@@ -26,6 +26,9 @@ GameObject.prototype.interpolate = function(alpha) {
 }
 
 GameObject.prototype.draw = function(context) {
+	if (!this.image_)
+		return;
+	
 	context.save();
 	context.translate(this.drawPosition_.x, this.drawPosition_.y);
 	context.scale(this.flipX_ === true ? -1 : 1, this.flipY_ === true ? -1 : 1);

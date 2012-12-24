@@ -67,6 +67,7 @@ Controller = {};
 Controller.Left = 0;
 Controller.Right = 1;
 Controller.Jump = 2;
+Controller.Duck = 3;
 
 Controller.buttons_ = [];
 
@@ -88,6 +89,10 @@ Controller.keyboardChanged = function(key, isKeyDown) {
 
 		case Keyboard.Up:
 			button = Controller.Jump;
+			break;
+
+		case Keyboard.Down:
+			button = Controller.Duck;
 			break;
 
 		default:
@@ -119,6 +124,7 @@ Controller.initialize = function() {
 	this.buttons_[Controller.Left]  = new ControllerButton();
 	this.buttons_[Controller.Right] = new ControllerButton();
 	this.buttons_[Controller.Jump]  = new ControllerButton();
+	this.buttons_[Controller.Duck]  = new ControllerButton();
 
 	this.buttons_[Controller.Left].setImage(Resources.images["controller"], new Rectangle(0, 0, 64, 64));
 	this.buttons_[Controller.Right].setImage(Resources.images["controller"], new Rectangle(64, 0, 64, 64));
