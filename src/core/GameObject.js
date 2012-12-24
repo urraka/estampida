@@ -12,14 +12,17 @@ function GameObject() {
 }
 
 GameObject.prototype.interpolate = function(alpha) {
-	this.drawPosition_.x = Math.floor(this.position_.x);
+	/*this.drawPosition_.x = Math.floor(this.position_.x);
 	this.drawPosition_.y = Math.floor(this.position_.y);
 
 	if (Math.abs(this.position_.x - this.previousPosition_.x) > 0)
 		this.drawPosition_.x = Math.floor(this.position_.x * alpha + this.previousPosition_.x * (1 - alpha));
 
 	if (Math.abs(this.position_.y - this.previousPosition_.y) > 0)
-		this.drawPosition_.y = Math.floor(this.position_.y * alpha + this.previousPosition_.y * (1 - alpha));
+		this.drawPosition_.y = Math.floor(this.position_.y * alpha + this.previousPosition_.y * (1 - alpha));*/
+
+	this.drawPosition_.x = this.position_.x * alpha + this.previousPosition_.x * (1 - alpha);
+	this.drawPosition_.y = this.position_.y * alpha + this.previousPosition_.y * (1 - alpha);
 }
 
 GameObject.prototype.draw = function(context) {

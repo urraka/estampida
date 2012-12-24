@@ -1,16 +1,19 @@
-function Level() {
+function Level(game) {
+	this.game = game;
 	this.debugMode = false;
 	this.player2 = new Player2();
 	this.camera = new Camera();
 	this.world = null;
 	this.maps = null;
+	this.textures = {};
+	this.background = null;
 	this.slowMotion = false;
 
 	Keyboard.bind(this, this.onKeyChanged);
 
 	// create world object
 
-	var svg2json = {"lineStrips":[[{"x":-151,"y":-73},{"x":287,"y":-58},{"x":1033,"y":20},{"x":1360,"y":-20},{"x":1477,"y":442},{"x":1419,"y":677},{"x":1323,"y":792},{"x":1333,"y":890},{"x":1417,"y":1075},{"x":1176,"y":1104},{"x":949,"y":1030},{"x":735,"y":1034},{"x":654,"y":971},{"x":521,"y":900},{"x":426,"y":891},{"x":421,"y":822},{"x":257,"y":818},{"x":266,"y":893},{"x":250,"y":894},{"x":6,"y":941},{"x":-107,"y":1028},{"x":-119,"y":1051},{"x":-477,"y":1058},{"x":-600,"y":935},{"x":-770,"y":-33},{"x":-569,"y":8},{"x":-151,"y":-73},{"x":-151,"y":-73}],[{"x":479,"y":764},{"x":564,"y":788},{"x":667,"y":769},{"x":839,"y":721},{"x":834,"y":659},{"x":724,"y":627},{"x":631,"y":656},{"x":479,"y":764}],[{"x":220,"y":565},{"x":105,"y":536},{"x":-30,"y":568},{"x":-36,"y":630},{"x":176,"y":678},{"x":303,"y":697},{"x":407,"y":673},{"x":220,"y":565}],[{"x":414,"y":553},{"x":499,"y":577},{"x":602,"y":558},{"x":774,"y":510},{"x":769,"y":448},{"x":659,"y":416},{"x":566,"y":445},{"x":414,"y":553}],[{"x":936,"y":445},{"x":914,"y":508},{"x":929,"y":560},{"x":983,"y":685},{"x":1139,"y":891},{"x":1237,"y":930},{"x":1044,"y":380},{"x":936,"y":445}],[{"x":-533,"y":480},{"x":-474,"y":540},{"x":-391,"y":531},{"x":-314,"y":490},{"x":-220,"y":545},{"x":-139,"y":560},{"x":-151,"y":502},{"x":-173,"y":467},{"x":-160,"y":448},{"x":-111,"y":445},{"x":-30,"y":492},{"x":13,"y":498},{"x":30,"y":481},{"x":-10,"y":462},{"x":-30,"y":424},{"x":-181,"y":364},{"x":-251,"y":370},{"x":-253,"y":321},{"x":-297,"y":302},{"x":-353,"y":254},{"x":-430,"y":194},{"x":-491,"y":197},{"x":-563,"y":214},{"x":-596,"y":240},{"x":-533,"y":480}],[{"x":-375,"y":745},{"x":-375,"y":875},{"x":-107,"y":875},{"x":-375,"y":745}],[{"x":733,"y":897},{"x":1001,"y":897},{"x":1001,"y":767},{"x":733,"y":897}],[{"x":315,"y":79},{"x":47,"y":79},{"x":47,"y":208},{"x":315,"y":79}],[{"x":-52,"y":264},{"x":-52,"y":135},{"x":-320,"y":135},{"x":-52,"y":264}]]};
+	var svg2json = {"lineStrips":[[{"x":-151,"y":-73},{"x":287,"y":-58},{"x":1033,"y":20},{"x":1360,"y":-20},{"x":1477,"y":442},{"x":1419,"y":677},{"x":1323,"y":792},{"x":1333,"y":890},{"x":1417,"y":1075},{"x":1176,"y":1104},{"x":949,"y":1030},{"x":735,"y":1034},{"x":654,"y":971},{"x":521,"y":900},{"x":426,"y":891},{"x":421,"y":822},{"x":257,"y":818},{"x":266,"y":893},{"x":250,"y":894},{"x":6,"y":941},{"x":-107,"y":1028},{"x":-119,"y":1051},{"x":-477,"y":1058},{"x":-600,"y":935},{"x":-770,"y":-33},{"x":-569,"y":8},{"x":-151,"y":-73}],[{"x":479,"y":764},{"x":564,"y":788},{"x":667,"y":769},{"x":839,"y":721},{"x":834,"y":659},{"x":724,"y":627},{"x":631,"y":656},{"x":479,"y":764}],[{"x":220,"y":565},{"x":105,"y":536},{"x":-30,"y":568},{"x":-36,"y":630},{"x":176,"y":678},{"x":303,"y":697},{"x":407,"y":673},{"x":220,"y":565}],[{"x":414,"y":553},{"x":499,"y":577},{"x":602,"y":558},{"x":774,"y":510},{"x":769,"y":448},{"x":659,"y":416},{"x":566,"y":445},{"x":414,"y":553}],[{"x":936,"y":445},{"x":914,"y":508},{"x":929,"y":560},{"x":983,"y":685},{"x":1139,"y":891},{"x":1237,"y":930},{"x":1044,"y":380},{"x":936,"y":445}],[{"x":-533,"y":480},{"x":-474,"y":540},{"x":-391,"y":531},{"x":-314,"y":490},{"x":-220,"y":545},{"x":-139,"y":560},{"x":-151,"y":502},{"x":-173,"y":467},{"x":-160,"y":448},{"x":-111,"y":445},{"x":-30,"y":492},{"x":13,"y":498},{"x":30,"y":481},{"x":-10,"y":462},{"x":-30,"y":424},{"x":-181,"y":364},{"x":-251,"y":370},{"x":-253,"y":321},{"x":-297,"y":302},{"x":-353,"y":254},{"x":-430,"y":194},{"x":-491,"y":197},{"x":-563,"y":214},{"x":-596,"y":240},{"x":-533,"y":480}],[{"x":-375,"y":745},{"x":-375,"y":875},{"x":-107,"y":875},{"x":-375,"y":745}],[{"x":733,"y":897},{"x":1001,"y":897},{"x":1001,"y":767},{"x":733,"y":897}],[{"x":315,"y":79},{"x":47,"y":79},{"x":47,"y":208},{"x":315,"y":79}],[{"x":-52,"y":264},{"x":-52,"y":135},{"x":-320,"y":135},{"x":-52,"y":264}]]};
 
 	var lineStrips1 = [
 		[
@@ -99,11 +102,34 @@ function Level() {
 	
 }
 
-Level.prototype.loadMap = function(name) {
+Level.prototype.load = function() {
+	// generate "mipmaps"
+
+	var groundTexture = Resources.images["mapTexture"];
+
+	this.textures["ground"] = new Array(11);
+	this.textures["ground"][0] = groundTexture;
+
+	/*for (var i = 1; i <= 10; i++) {
+		var scale = 1 - i * 0.1;
+		var width = Math.floor(groundTexture.width * scale);
+		var height = Math.floor(groundTexture.height * scale);
+		var img = new RenderTarget();
+		img.create(width, height);
+		var ctx = img.getContext();
+		ctx.scale(scale, scale);
+		ctx.drawImage(groundTexture, 0, 0);
+		this.textures["ground"][i] = img.getCanvas();
+	}*/
 }
 
 Level.prototype.updateViewSize = function(size) {
 	this.camera.updateViewSize(size.x, size.y);
+
+	var context = this.game.getRenderWindow().getContext();
+	this.background = context.createLinearGradient(0, 0, 0, size.y);
+    this.background.addColorStop(0, "#00F");
+    this.background.addColorStop(1, "#FFF");
 }
 
 Level.prototype.setMap = function(map) {
@@ -155,6 +181,8 @@ Level.prototype.update = function(dt) {
 	if (this.slowMotion)
 		dt /= 5;
 
+	this.world.resetActiveLines();
+
 	this.player2.update(dt);
 	this.camera.update(dt);
 }
@@ -165,21 +193,19 @@ Level.prototype.interpolate = function(alpha) {
 }
 
 Level.prototype.draw = function(context) {
-	var view = this.camera.getView();
-
-	var background = context.createLinearGradient(0, 0, 0, view.height);
-    background.addColorStop(0, "#00F");
-    background.addColorStop(1, "#FFF");
-
 	context.save();
+
+	var view = this.camera.getView();
 
 	if (this.debugMode)
 		context.fillStyle = "#CCC";
 	else
-		context.fillStyle = background;
+		context.fillStyle = this.background;
 
 	context.fillRect(0, 0, view.width, view.height);
-	context.translate(-Math.floor(view.left), -Math.floor(view.top));
+
+	context.scale(this.camera.getZoomFactor(), this.camera.getZoomFactor());
+	context.translate(-view.left, -view.top);
 
 	if (this.debugMode)
 		this.world.draw(context, this.player2);
@@ -192,16 +218,18 @@ Level.prototype.draw = function(context) {
 
 Level.prototype.drawMap = function(context) {
 	var view = this.camera.getView();
-	var texture = Resources.images["mapTexture"];
+	var zoomFactor = this.camera.getZoomFactor();
+
+	//var texture = this.textures["ground"][Math.min(10, 10 - Math.floor(zoomFactor < 1 ? zoomFactor * 10 : 10))];
+	var texture = this.textures["ground"][0];
 	var ground = context.createPattern(texture, "repeat");
 	
 	context.save();
-	//context.fillStyle = "#000";
 	context.fillStyle = ground;
 
 	var lineStrip = this.lineStrips[0];
 	var len = lineStrip.length;
-	var size = Math.max(view.width, view.height);
+	var size = Math.max(view.width / zoomFactor, view.height / zoomFactor);
 	
 	context.beginPath();
 	context.moveTo(lineStrip[0].x, lineStrip[0].y);

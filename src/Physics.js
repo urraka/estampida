@@ -435,8 +435,8 @@ Physics.World.prototype.draw = function(context, object) {
 				context.shadowBlur = 10;
 				context.shadowColor = "#000";
 				context.beginPath();
-				context.moveTo(Math.floor(current.p1.x), Math.floor(current.p1.y));
-				context.lineTo(Math.floor(current.p2.x), Math.floor(current.p2.y));
+				context.moveTo(current.p1.x, current.p1.y);
+				context.lineTo(current.p2.x, current.p2.y);
 				context.stroke();
 				context.shadowBlur = 0;
 			}
@@ -445,14 +445,14 @@ Physics.World.prototype.draw = function(context, object) {
 			current.midpoint(locals.midpoint);
 
 			context.beginPath();
-			context.moveTo(Math.floor(locals.midpoint.x), Math.floor(locals.midpoint.y));
-			context.lineTo(Math.floor(locals.midpoint.x + current.normal.x * 10), Math.floor(locals.midpoint.y + current.normal.y * 10));
+			context.moveTo(locals.midpoint.x, locals.midpoint.y);
+			context.lineTo(locals.midpoint.x + current.normal.x * 10, locals.midpoint.y + current.normal.y * 10);
 			context.stroke();
 
 			// line
 			context.beginPath();
-			context.moveTo(Math.floor(current.p1.x), Math.floor(current.p1.y));
-			context.lineTo(Math.floor(current.p2.x), Math.floor(current.p2.y));
+			context.moveTo(current.p1.x, current.p1.y);
+			context.lineTo(current.p2.x, current.p2.y);
 			context.stroke();
 
 			// hull
@@ -463,21 +463,21 @@ Physics.World.prototype.draw = function(context, object) {
 				context.strokeStyle = "rgba(0,0,255,0.4)";
 
 				context.beginPath();
-				context.moveTo(Math.floor(hull.line.p1.x), Math.floor(hull.line.p1.y));
-				context.lineTo(Math.floor(hull.line.p2.x), Math.floor(hull.line.p2.y));
+				context.moveTo(hull.line.p1.x, hull.line.p1.y);
+				context.lineTo(hull.line.p2.x, hull.line.p2.y);
 				context.stroke();
 
 				if (hull.line1.hasLength()) {
 					context.beginPath();
-					context.moveTo(Math.floor(hull.line1.p1.x), Math.floor(hull.line1.p1.y));
-					context.lineTo(Math.floor(hull.line1.p2.x), Math.floor(hull.line1.p2.y));
+					context.moveTo(hull.line1.p1.x, hull.line1.p1.y);
+					context.lineTo(hull.line1.p2.x, hull.line1.p2.y);
 					context.stroke();
 				}
 
 				if (hull.line2.hasLength()) {
 					context.beginPath();
-					context.moveTo(Math.floor(hull.line2.p1.x), Math.floor(hull.line2.p1.y));
-					context.lineTo(Math.floor(hull.line2.p2.x), Math.floor(hull.line2.p2.y));
+					context.moveTo(hull.line2.p1.x, hull.line2.p1.y);
+					context.lineTo(hull.line2.p2.x, hull.line2.p2.y);
 					context.stroke();
 				}
 
@@ -514,42 +514,41 @@ Physics.World.prototype.draw = function(context, object) {
 				context.beginPath();
 	
 				if (this.bounds_.width > this.bounds_.height) {
-					context.moveTo(Math.floor(bounds.left + bounds.width) + 0.5, Math.floor(bounds.top));
-					context.lineTo(Math.floor(bounds.left + bounds.width) + 0.5, Math.floor(bounds.top + bounds.height));
+					context.moveTo(bounds.left + bounds.width, bounds.top);
+					context.lineTo(bounds.left + bounds.width, bounds.top + bounds.height);
 				}
 				else {
-					context.moveTo(Math.floor(bounds.left), Math.floor(bounds.top + bounds.height) + 0.5);
-					context.lineTo(Math.floor(bounds.left + bounds.width), Math.floor(bounds.top + bounds.height) + 0.5);
+					context.moveTo(bounds.left, bounds.top + bounds.height);
+					context.lineTo(bounds.left + bounds.width, bounds.top + bounds.height);
 				}
 	
 				context.stroke();
 			}
 		}
 
-		context.strokeRect(Math.floor(locals.bounds.left) + 0.5, Math.floor(locals.bounds.top) + 0.5, Math.floor(locals.bounds.width), Math.floor(locals.bounds.height));
+		// draw bounding rect
+		context.beginPath();
+		context.moveTo(locals.bounds.left, locals.bounds.top);
+		context.lineTo(locals.bounds.left, locals.bounds.top + locals.bounds.height);
+		context.lineTo(locals.bounds.left + locals.bounds.width, locals.bounds.top + locals.bounds.height);
+		context.lineTo(locals.bounds.left + locals.bounds.width, locals.bounds.top);
+		context.closePath();
+		context.stroke();
 	}
 
 	context.restore();
-
-	// clear active lines
-
-	for (var i = this.activeLines_.length - 1; i >= 0; i--) {
-		this.activeLines_[i].active = false;
-	}
-
-	this.activeLines_.length = 0;
 }
 
 Physics.World.prototype.drawQuadTreeNode = function(context, node) {
 	if (node.subdivided_) {
 		context.beginPath();
-		context.moveTo(Math.floor(node.bounds_.left + node.bounds_.width / 2) + 0.5, Math.floor(node.bounds_.top));
-		context.lineTo(Math.floor(node.bounds_.left + node.bounds_.width / 2) + 0.5, Math.floor(node.bounds_.top + node.bounds_.height));
+		context.moveTo(node.bounds_.left + node.bounds_.width / 2, node.bounds_.top);
+		context.lineTo(node.bounds_.left + node.bounds_.width / 2, node.bounds_.top + node.bounds_.height);
 		context.stroke();
 
 		context.beginPath();
-		context.moveTo(Math.floor(node.bounds_.left ), Math.floor(node.bounds_.top + node.bounds_.height / 2) + 0.5);
-		context.lineTo(Math.floor(node.bounds_.left + node.bounds_.width), Math.floor(node.bounds_.top + node.bounds_.height / 2) + 0.5);
+		context.moveTo(node.bounds_.left , node.bounds_.top + node.bounds_.height / 2);
+		context.lineTo(node.bounds_.left + node.bounds_.width, node.bounds_.top + node.bounds_.height / 2);
 		context.stroke();
 
 		this.drawQuadTreeNode(context, node.nodes_.topLeft);
@@ -557,4 +556,12 @@ Physics.World.prototype.drawQuadTreeNode = function(context, node) {
 		this.drawQuadTreeNode(context, node.nodes_.bottomLeft);
 		this.drawQuadTreeNode(context, node.nodes_.bottomRight);
 	}
+}
+
+Physics.World.prototype.resetActiveLines = function() {
+	for (var i = this.activeLines_.length - 1; i >= 0; i--) {
+		this.activeLines_[i].active = false;
+	}
+
+	this.activeLines_.length = 0;
 }

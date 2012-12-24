@@ -1,6 +1,6 @@
 function GameBase() {
 	this.renderWindow_ = new RenderWindow();
-	this.dt_ = 10;
+	this.dt_ = 33;
 	this.fps_ = 0;
 	this.currentState_ = null;
 	this.showFps_ = false;

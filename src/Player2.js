@@ -25,7 +25,7 @@ Player2.prototype.locals_ = {};
 Player2.prototype.update = function(dt) {
 	this.previousPosition_.assignv(this.position_); // used for frame interpolation
 
-	var kWalkVel = 250;
+	var kWalkVel = 300;
 	var kJumpVel = -550;
 
 	this.velocity_.x = 0;

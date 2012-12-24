@@ -22,6 +22,8 @@ function getPathPoints(svg, path) {
 	var prevMove = true;
 	var svgPoint = svg.createSVGPoint();
 
+	var plen = 0;
+
 	for (var i = 0; i < count; i++) {
 		var item = segList.getItem(i);
 		var ix = Math.round(item.x);
@@ -43,7 +45,11 @@ function getPathPoints(svg, path) {
 				svgPoint.y = y;
 
 				var pt = svgPoint.matrixTransform(transform);
-				points.push({ x: pt.x, y: pt.y });
+
+				if (plen === 0 || (pt.x !== points[plen - 1].x || pt.y !== points[plen - 1].y)) {
+					points.push({ x: pt.x, y: pt.y });
+					plen++;
+				}
 			}
 
 			prevMove = false;
@@ -61,10 +67,17 @@ function getPathPoints(svg, path) {
 			svgPoint.y = y;
 
 			var pt = svgPoint.matrixTransform(transform);
-			points.push({ x: pt.x, y: pt.y });
+
+			if (plen === 0 || (pt.x !== points[plen - 1].x || pt.y !== points[plen - 1].y)) {
+				points.push({ x: pt.x, y: pt.y });
+				plen++;
+			}
 		}
 		else if (item.pathSegType === SVGPathSeg.PATHSEG_CLOSEPATH) {
-			points.push({ x: points[0].x, y: points[0].y });
+			if (plen > 0 && (points[plen - 1].x !== points[0].x || points[plen - 1].y !== points[0].y)) {
+				points.push({ x: points[0].x, y: points[0].y });
+				plen++;
+			}
 		}
 	}
 
