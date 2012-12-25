@@ -20,6 +20,12 @@ function Player2() {
 	this.origin_.assignxy(26, 80);
 
 	this.ducking_ = false;
+
+	var hat = new GameObject();
+	hat.image_ = Resources.images["christmas"];
+	hat.origin_.assignxy(24, 31);
+
+	this.hat_ = hat;
 }
 
 Player2.prototype.locals_ = {};
@@ -321,5 +327,9 @@ Player2.prototype.draw = function(context, debugMode) {
 	}
 	else {
 		GameObject.prototype.draw.call(this, context);
+
+		this.hat_.drawPosition_.assignv(this.drawPosition_).subtractxy(this.flipX_ ? 2 : -2, rc.height - 8);
+		this.hat_.flipX_ = this.flipX_;
+		this.hat_.draw(context);
 	}
 }
