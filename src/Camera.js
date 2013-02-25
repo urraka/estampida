@@ -7,6 +7,9 @@ function Camera() {
 	this.objective_ = null;
 	this.view_ = new Rectangle();
 
+	this.zoomTarget_ = 0;
+	this.zoomChangeRate_ = 0.5;
+
 	this.zoom_ = 0;
 	this.previousZoom_ = 0;
 	this.interpolatedZoom_ = 0;
@@ -24,12 +27,18 @@ Camera.prototype.update = function(dt) {
 		objectBounds: new Rectangle()
 	});
 
-	if (Keyboard.isKeyPressed(Keyboard.Add))
-		this.zoom_ += this.zoomVelocity_ * dt;
-	else if (Keyboard.isKeyPressed(Keyboard.Subtract))
-		this.zoom_ -= this.zoomVelocity_ * dt;
+	if (Controller.isPressed(Controller.ZoomIn))
+		this.zoomTarget_ += this.zoomChangeRate_ * dt;
+	else if (Controller.isPressed(Controller.ZoomOut))
+		this.zoomTarget_ -= this.zoomChangeRate_ * dt;
 
-	this.zoom_ = Math.max(-1, Math.min(1, this.zoom_));
+	this.zoomTarget_ = Math.max(-1, Math.min(1, this.zoomTarget_));
+	this.zoomVelocity_ = this.zoomTarget_ - this.zoom_;
+
+	if (Math.abs(this.zoomVelocity_) < kEpsilon)
+		this.zoomVelocity_ = 0;
+
+	this.zoom_ += this.zoomVelocity_ * Camera.kVelMultiplier * dt;
 
 	if (!this.objective_)
 		return;

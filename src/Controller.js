@@ -52,6 +52,8 @@ Controller.Left = 0;
 Controller.Right = 1;
 Controller.Jump = 2;
 Controller.Duck = 3;
+Controller.ZoomIn = 4;
+Controller.ZoomOut = 5;
 
 Controller.buttons_ = [];
 
@@ -79,6 +81,14 @@ Controller.keyboardChanged = function(key, isKeyDown) {
 			button = Controller.Duck;
 			break;
 
+		case Keyboard.Add:
+			button = Controller.ZoomIn;
+			break;
+
+		case Keyboard.Subtract:
+			button = Controller.ZoomOut;
+			break;
+
 		default:
 			return;
 	}
@@ -104,11 +114,12 @@ Controller.touchChanged = function(touches) {
 }
 
 Controller.initialize = function() {
-	this.buttons_.lenght = 3;
 	this.buttons_[Controller.Left]  = new ControllerButton();
 	this.buttons_[Controller.Right] = new ControllerButton();
 	this.buttons_[Controller.Jump]  = new ControllerButton();
 	this.buttons_[Controller.Duck]  = new ControllerButton();
+	this.buttons_[Controller.ZoomIn]  = new ControllerButton();
+	this.buttons_[Controller.ZoomOut]  = new ControllerButton();
 
 	/*this.buttons_[Controller.Left].setImage(Resources.images["controller"], new Rectangle(0, 0, 64, 64));
 	this.buttons_[Controller.Right].setImage(Resources.images["controller"], new Rectangle(64, 0, 64, 64));
@@ -134,6 +145,8 @@ Controller.updateViewSize = function(viewSize) {
 	this.buttons_[Controller.Right].setArea(viewSize.x / 4, viewSize.y / 2, viewSize.x / 4, viewSize.y / 2);
 	this.buttons_[Controller.Jump].setArea(viewSize.x / 2, 0, viewSize.x / 2, viewSize.y / 2);
 	this.buttons_[Controller.Duck].setArea(viewSize.x / 2, viewSize.y / 2, viewSize.x / 2, viewSize.y / 2);
+	this.buttons_[Controller.ZoomIn].setArea(0, 0, viewSize.x / 4, viewSize.y / 2);
+	this.buttons_[Controller.ZoomOut].setArea(viewSize.x / 4, 0, viewSize.x / 4, viewSize.y / 2);
 }
 
 Controller.draw = function(context) {
