@@ -3,7 +3,7 @@ Player2.prototype = new GameObject();
 function Player2() {
 	GameObject.call(this);
 
-	this.image_ = Resources.images["perro"];
+	this.image_ = Resources.images["guy"];
 	this.origin_.x = 26;
 	this.origin_.y = 78;
 
@@ -26,6 +26,10 @@ function Player2() {
 	hat.origin_.assignxy(24, 31);
 
 	this.hat_ = hat;
+
+	this.blinking_ = false;
+	this.blinkingTime_ = 0;
+	this.blinkingNext_ = 5.0 + rand(-2, 2);
 }
 
 Player2.prototype.locals_ = {};
@@ -80,6 +84,18 @@ Player2.prototype.update = function(dt) {
 	}
 	else {
 		this.animation_.set(animAir);
+	}
+
+	this.blinkingTime_ += dt;
+
+	if (this.blinkingTime_ >= this.blinkingNext_ && !this.blinking_) {
+		this.blinking_ = true;
+		this.blinkingNext_ += 0.2;
+	}
+	else if (this.blinkingTime_ >= this.blinkingNext_ && this.blinking_) {
+		this.blinking_ = false;
+		this.blinkingNext_ = 3.0 + rand(-2, 2);
+		this.blinkingTime_ = 0;
 	}
 
 	this.animation_.update(dt);
@@ -291,15 +307,18 @@ Player2.prototype.spawn = function(world, x, y) {
 
 Player2.prototype.getBoundingRect = function(position, rc) {
 	rc.width = 34;
-	rc.height = this.ducking_ ? 60 : 76;
+	rc.height = this.ducking_ ? 50 : 66;
 	rc.left = position.x - rc.width / 2;
 	rc.top = position.y - rc.height;
 	return rc;
 }
 
 Player2.prototype.draw = function(context, debugMode) {
-	var rc = new Rectangle();
-	this.getBoundingRect(this.drawPosition_, rc);
+	var locals = this.locals_.draw || (this.locals_.draw = {
+		rc: new Rectangle()
+	});
+
+	var rc = this.getBoundingRect(this.drawPosition_, locals.rc);
 
 	if (debugMode) {
 		context.save();
@@ -330,8 +349,15 @@ Player2.prototype.draw = function(context, debugMode) {
 	else {
 		GameObject.prototype.draw.call(this, context);
 
-		this.hat_.drawPosition_.assignv(this.drawPosition_).subtractxy(this.flipX_ ? 2 : -2, rc.height - 8);
+		if (this.blinking_) {
+			context.save();
+			context.fillStyle = "#000";
+			context.fillRect(rc.left + 5, rc.top + 5, 25, 10);
+			context.restore();
+		}
+
+		/*this.hat_.drawPosition_.assignv(this.drawPosition_).subtractxy(this.flipX_ ? 2 : -2, rc.height - 8);
 		this.hat_.flipX_ = this.flipX_;
-		this.hat_.draw(context);
+		this.hat_.draw(context);*/
 	}
 }

@@ -8,6 +8,21 @@ function Level(game) {
 	this.textures = {};
 	this.background = null;
 	this.slowMotion = false;
+	this.scenery = [];
+
+	// scenery
+	var scenery = [
+		{ image: "tree-1", x: 490, y: 180 },
+		{ image: "tree-2", x: 110, y: 380 },
+		{ image: "tree-1", x: -500, y: 530 }
+	];
+
+	for (var i = 0; i < scenery.length; i++) {
+		var object = new GameObject();
+		object.image_ = Resources.images[scenery[i].image];
+		object.drawPosition_.assignxy(scenery[i].x, scenery[i].y);
+		this.scenery.push(object);
+	}
 
 	Keyboard.bind(this, this.onKeyChanged);
 
@@ -128,8 +143,8 @@ Level.prototype.updateViewSize = function(size) {
 
 	var context = this.game.getRenderWindow().getContext();
 	this.background = context.createLinearGradient(0, 0, 0, size.y);
-    this.background.addColorStop(0, "#00F");
-    this.background.addColorStop(1, "#FFF");
+    this.background.addColorStop(0, "#333");
+    this.background.addColorStop(1, "#999");
 }
 
 Level.prototype.setMap = function(map) {
@@ -227,7 +242,11 @@ Level.prototype.drawMap = function(context) {
 	var ground = context.createPattern(texture, "repeat");
 	
 	context.save();
-	context.fillStyle = ground;
+	context.fillStyle = "#000";
+
+	for (var i = this.scenery.length - 1; i >= 0; i--) {
+		this.scenery[i].draw(context);
+	}
 
 	var lineStrip = this.lineStrips[0];
 	var len = lineStrip.length;
@@ -263,7 +282,7 @@ Level.prototype.drawMap = function(context) {
 		context.fill();
 	}
 
-	context.strokeStyle = "#000";
+	/*context.strokeStyle = "#000";
 
 	for (var iStrip = 0; iStrip < lenStrips; iStrip++) {
 		var lineStrip = this.lineStrips[iStrip];
@@ -280,7 +299,7 @@ Level.prototype.drawMap = function(context) {
 		}
 
 		context.stroke();
-	}
+	}*/
 
 	context.restore();
 }

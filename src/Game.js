@@ -19,10 +19,13 @@ Game.prototype.initialize = function() {
 
 	var imagesInfo = [
 		{ id: "perro", src: "images/perro3.png" },
+		{ id: "guy", src: "images/guy.png" },
 		{ id: "map", src: "images/map.png" },
 		{ id: "mapTexture", src: "images/SandyHopscotch.png" },
 		{ id: "controller", src: "images/controller.png" },
-		{ id: "christmas", src: "images/navidad.png" }
+		{ id: "christmas", src: "images/navidad.png" },
+		{ id: "tree-1", src: "images/tree-1.png" },
+		{ id: "tree-2", src: "images/tree-2.png" }
 	];
 
 	var loadedCount = 0;
