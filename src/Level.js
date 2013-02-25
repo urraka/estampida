@@ -214,6 +214,8 @@ Level.prototype.draw = function(context) {
 
 	this.player2.draw(context, this.debugMode);
 	context.restore();
+
+	Controller.draw(context);
 }
 
 Level.prototype.drawMap = function(context) {

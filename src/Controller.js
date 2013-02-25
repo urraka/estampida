@@ -103,11 +103,11 @@ Controller.keyboardChanged = function(key, isKeyDown) {
 }
 
 Controller.touchChanged = function(touches) {
-	for (var iButton in this.buttons_) {
+	for (var iButton = this.buttons_.length - 1; iButton >= 0; iButton--) {
 		var button = this.buttons_[iButton];
 		var touched = false;
 
-		for (iTouch in touches) {
+		for (var iTouch = touches.length - 1; iTouch >= 0; iTouch--) {
 			var touch = touches[iTouch];
 
 			if (button.testPoint(touch.pageX, touch.pageY)) {
@@ -136,7 +136,8 @@ Controller.initialize = function() {
 
 	$(document).bind("touchstart touchmove touchend touchcancel", function(e) {
 		e.preventDefault();
-		Controller.touchChanged.call(Controller, e.touches);
+		//Controller.touchChanged.call(Controller, e.touches);
+		Controller.touchChanged(e.originalEvent.touches);
 	});
 }
 

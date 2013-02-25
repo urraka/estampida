@@ -5,3 +5,7 @@ function assert(condition, message) {
 		console.log(message);
 	}
 }
+
+function rand(min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}

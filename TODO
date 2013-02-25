@@ -1,0 +1,23 @@
+Tasks:
+ ☐ Remove Math.floor from everywhere used for pixel adjusting.
+ ☐ Investigate weird hull line on top of map 3.
+ ☐ Change Animation so it doesn't use Resources. Use whatever resources contain instead.
+ ☐ Refactor Physics.LineHull to have an array instead of line, line1, line2.
+ ☐ Remove normal from Line object and refactor as necessary.
+ ☐ Refactor Physics.WorldLine. Override assign functions, constructor, etc.
+
+＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
+Archive:
+ ✔ Fix speeding up on some wall collisions (velocity.x effect). @done (13-01-02 03:07)
+ ✔ Check if it's necessary to return percent from Player2.move(). @done (13-01-02 03:07)
+ ✔ Finish jump checking. @done (13-01-02 03:07)
+ ✔ Fix detection of animation. @done (13-01-02 03:07)
+ ✔ Fix collision hull on intersection between wall and floor line. @done (13-01-02 03:07)
+ ✔ x Test polygons with axis aligned edges. Try different cases of triangles. @done (13-01-02 03:07)
+ ✔ Physics.World.moveObject: avoid pulling back kEpsilon if kEpsilon is larger than actual movement. @done (13-01-02 03:07)
+ ✔ Player.move: call createLineHull when necessary. @done (13-01-02 03:07)
+ ✔ Physics.World.createLineHull: recalculate isFloor for line1/line2. @done (13-01-02 03:07)
+ ✔ Repeat move logic on player when necessary (collided with something, changed to next floor). @done (13-01-02 03:07)
+ ✔ Rename Estampida.js to something more generic (nameless). @done (13-01-02 03:07)
+ ✔ Add main.js instead of embedding code in html. @done (13-01-02 03:07)
+ ✔ Fix bug: force object added to QuadTree to have a method "intersectsRect" instead of passing a bounds object. @done (13-01-02 03:07)

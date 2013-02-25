@@ -92,6 +92,15 @@ Game.prototype.initialize = function() {
 			{ left: 318, top: 0 }
 		]
 	};
+
+	Resources.animations["duckFalling"] = {
+		frameWidth: 54,
+		frameHeight: 82,
+		frameDuration: 0,
+		frames: [
+			{ left: 265, top: 0 }
+		]
+	};
 }
 
 Game.prototype.windowResize = function(size) {

@@ -38,7 +38,7 @@ Player2.prototype.update = function(dt) {
 	else
 		this.duck(false);
 
-	var kWalkVel = this.ducking_ ? 150 : 300;
+	var kWalkVel = (this.ducking_ && this.touchedLine_ && this.touchedLine_.isFloor) ? 150 : 300;
 	var kJumpVel = -550;
 
 	this.velocity_.x = 0;
@@ -60,10 +60,12 @@ Player2.prototype.update = function(dt) {
 
 	var animStanding = "standing";
 	var animWalking = "walking";
+	var animAir = "jumping";
 
 	if (this.ducking_) {
 		animStanding = "ducking";
 		animWalking = "duckWalking";
+		animAir = "duckFalling";
 	}
 
 	if (this.touchedLine_ && this.touchedLine_.isFloor) {
@@ -77,7 +79,7 @@ Player2.prototype.update = function(dt) {
 		}
 	}
 	else {
-		this.animation_.set("jumping");
+		this.animation_.set(animAir);
 	}
 
 	this.animation_.update(dt);
@@ -219,7 +221,7 @@ Player2.prototype.jump = function(jumpVel, walkSpeed) {
 	// 3. check if there's enough space to jump testing for collision 1 unit above us (helps choosing the current graphic/animation)
 	// 4. if there's a collision check if the collision line has a reasonable slope to let us jump
 
-	if (!this.ducking_ && this.touchedLine_ && this.touchedLine_.isFloor) {
+	if (this.touchedLine_ && this.touchedLine_.isFloor) {
 		var slope = this.touchedLine_.slope();
 
 		if (walkSpeed === 0 || slope === 0 || (slope > 0 && (walkSpeed > 0 || jumpVel / walkSpeed > slope)) || (slope < 0 && (walkSpeed < 0 || jumpVel / walkSpeed < slope))) {
@@ -250,7 +252,7 @@ Player2.prototype.duck = function(shouldDuck) {
 	if (this.ducking_ === shouldDuck)
 		return;
 
-	if (shouldDuck && this.touchedLine_ && this.touchedLine_.isFloor) {
+	if (shouldDuck) {
 		this.ducking_ = true;
 	}
 	else if (!shouldDuck) {

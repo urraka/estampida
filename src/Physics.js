@@ -4,6 +4,12 @@ Physics.kMaxFloorSlope = 2;
 
 // Physics.WorldLine : Line
 
+/**
+ * @constructor
+ * Extended line which can be connected with a previous/next line.
+ * @param {Vector2} p1 Start point.
+ * @param {Vector2} p2 End point.
+ */
 Physics.WorldLine = function(p1, p2) {
 	Line.call(this, p1, p2);
 	this.previous = null;
@@ -12,7 +18,7 @@ Physics.WorldLine = function(p1, p2) {
 
 	this.flag = false; // if flagged color will change (for debugging)
 	this.active = false; // to show which lines are being tested for collision (for debugging)
-}
+};
 
 Physics.WorldLine.prototype = new Line();
 
@@ -22,7 +28,7 @@ Physics.WorldLine.prototype.assignl = function(worldLine) {
 	this.next = worldLine.next;
 	this.isFloor = worldLine.isFloor;
 	return this;
-}
+};
 
 // Physics.LineHull
 
@@ -34,7 +40,7 @@ Physics.LineHull = function(lineHull) {
 
 	if (lineHull)
 		this.assign(lineHull);
-}
+};
 
 Physics.LineHull.prototype.assign = function(lineHull) {
 	this.line.assignl(lineHull.line);
@@ -52,7 +58,7 @@ Physics.LineHull.prototype.assign = function(lineHull) {
 		this.line.next = this.line2;
 
 	return this;
-}
+};
 
 Physics.LineHull.prototype.getLine = function(index) {
 	switch (index) {
@@ -61,7 +67,7 @@ Physics.LineHull.prototype.getLine = function(index) {
 		case 2: return this.line2;
 		default: return null;
 	}
-}
+};
 
 // Physics.MoveResult
 
@@ -70,10 +76,15 @@ Physics.MoveResult = function() {
 	this.collisionLineIndex = -1;
 	this.collisionHull = new Physics.LineHull();
 	this.percent = 0;
-}
+};
 
 // Physics.World
 
+/**
+ * @constructor
+ * Physics world for handling collisions.
+ * @param {Rectangle} bounds Bounding rectangle of the world.
+ */
 Physics.World = function(bounds) {
 	this.quadTreeArray_ = null;
 	this.lineStrips_ = [];
@@ -89,14 +100,14 @@ Physics.World = function(bounds) {
 	var itemCallbacks = Physics.World.QuadTreeItemCallbacks;
 
 	this.quadTreeArray_ = new QuadTreeArray(bounds, itemCallbacks, maxDepth, maxChildren);
-}
+};
 
 Physics.World.prototype.locals_ = {};
 
 Physics.World.QuadTreeItemCallbacks = {
 	intersectsRect: function(item, bounds) { return bounds.intersectsLine(item.p1, item.p2); },
 	getBounds: function(item, result) { return item.getBounds(result); }
-}
+};
 
 Physics.World.prototype.addLineStrip = function(points) {
 	var locals = this.locals_.addLineStrip || (this.locals_.addLineStrip = {
@@ -106,7 +117,6 @@ Physics.World.prototype.addLineStrip = function(points) {
 	if (points.length <= 1)
 		return;
 
-	var locals = this.locals_.addLineStrip;
 	var nPoints = points.length;
 	var currentLine = null;
 	var firstLine = null;
@@ -137,8 +147,14 @@ Physics.World.prototype.addLineStrip = function(points) {
 	}
 
 	this.lineStrips_.push(firstLine);
-}
+};
 
+/**
+ * Performs a collision test for a given object moving to a destination position.
+ * @param  {GameObject} object Object to test for collision.
+ * @param  {Vector2} dest   Destination position.
+ * @param  {Physics.MoveResult} result Object where to store the result.
+ */
 Physics.World.prototype.moveObject = function(object, dest, result) {
 	var locals = this.locals_.moveObject || (this.locals_.moveObject = {
 		lines: [],
@@ -238,7 +254,7 @@ Physics.World.prototype.moveObject = function(object, dest, result) {
 			}
 		}
 	}
-}
+};
 
 Physics.World.prototype.createLineHull = function(object, line, hull) {
 	var locals = this.locals_.createLineHull || (this.locals_.createLineHull = {
@@ -253,7 +269,7 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 	var isPreviousFloor = realLine.previous && realLine.previous.isFloor;
 	var isNextFloor = realLine.next && realLine.next.isFloor;
 
-	var line = hull.line.assignl(realLine);
+	line = hull.line.assignl(realLine);
 	line.previous = hull.line1;
 	line.next = hull.line2;
 	line.isFloor = realLine.isFloor;
@@ -401,7 +417,7 @@ Physics.World.prototype.createLineHull = function(object, line, hull) {
 		assert(line.next.p1.equalsv(line.p2), "createLineHull: line.previous.p1 != line.p2");
 
 	return hull;
-}
+};
 
 Physics.World.prototype.draw = function(context, object) {
 	var locals = this.locals_.draw || (this.locals_.draw = {
@@ -537,7 +553,7 @@ Physics.World.prototype.draw = function(context, object) {
 	}
 
 	context.restore();
-}
+};
 
 Physics.World.prototype.drawQuadTreeNode = function(context, node) {
 	if (node.subdivided_) {
@@ -556,7 +572,7 @@ Physics.World.prototype.drawQuadTreeNode = function(context, node) {
 		this.drawQuadTreeNode(context, node.nodes_.bottomLeft);
 		this.drawQuadTreeNode(context, node.nodes_.bottomRight);
 	}
-}
+};
 
 Physics.World.prototype.resetActiveLines = function() {
 	for (var i = this.activeLines_.length - 1; i >= 0; i--) {
@@ -564,4 +580,5 @@ Physics.World.prototype.resetActiveLines = function() {
 	}
 
 	this.activeLines_.length = 0;
-}
+};
+
