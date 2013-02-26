@@ -26,7 +26,8 @@ Game.prototype.initialize = function() {
 		{ id: "christmas", src: "images/navidad.png" },
 		{ id: "tree-1", src: "images/tree-1.png" },
 		{ id: "tree-2", src: "images/tree-2.png" },
-		{ id: "rock", src: "images/rock.png" }
+		{ id: "rock", src: "images/rock.png" },
+		{ id: "light", src: "images/light.png" }
 	];
 
 	var loadedCount = 0;

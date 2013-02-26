@@ -10,6 +10,7 @@ function Level(game) {
 	this.slowMotion = false;
 	this.scenery = [];
 	this.rocks = [];
+	this.lightTime = 0;
 
 	Keyboard.bind(this, this.onKeyChanged);
 
@@ -106,7 +107,8 @@ function Level(game) {
 	var sceneryData = [
 		{ image: "tree-1", x: 664, y: 428, x0: 174, y0: 248, angle: 0 },
 		{ image: "tree-2", x: 110, y: 380, x0: 0, y0: 0, angle: 0 },
-		{ image: "tree-1", x: -326, y: 778, x0: 174, y0: 248, angle: 20 }
+		{ image: "tree-1", x: -326, y: 778, x0: 174, y0: 248, angle: 20 },
+		{ image: "light", x: 1045, y: 400, x0: 13, y0: 247, angle: 5 }
 	];
 
 	for (var i = 0; i < sceneryData.length; i++) {
@@ -261,6 +263,11 @@ Level.prototype.update = function(dt) {
 
 	this.player2.update(dt);
 	this.camera.update(dt);
+
+	this.lightTime += dt;
+
+	if (this.lightTime >= 2)
+		this.lightTime -= 2;
 }
 
 Level.prototype.interpolate = function(alpha) {
@@ -289,6 +296,17 @@ Level.prototype.draw = function(context) {
 		this.drawMap(context);
 
 	this.player2.draw(context, this.debugMode);
+
+	var lightValue = this.lightTime / 2;
+	lightValue = Math.round(lerp(80, 140, lightValue > 0.5 ? 1 - lightValue : lightValue));
+	var light = context.createRadialGradient(Math.cos(Math.PI * (this.lightTime - 1))*2, 2*Math.sin(Math.PI * (this.lightTime - 1)), 0, 0, 0, 100);
+
+	light.addColorStop(0, "rgba(255, 255, 255, 0.8)");
+	light.addColorStop(1, "rgba(" + lightValue + ", " + lightValue + ", " + lightValue + ", 0)");
+	context.fillStyle = light;
+	context.translate(1065, 185);
+	context.fillRect(-100, -100, 200, 200)
+
 	context.restore();
 
 	Controller.draw(context);
