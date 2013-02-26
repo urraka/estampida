@@ -9,20 +9,7 @@ function Level(game) {
 	this.background = null;
 	this.slowMotion = false;
 	this.scenery = [];
-
-	// scenery
-	var scenery = [
-		{ image: "tree-1", x: 490, y: 180 },
-		{ image: "tree-2", x: 110, y: 380 },
-		{ image: "tree-1", x: -500, y: 530 }
-	];
-
-	for (var i = 0; i < scenery.length; i++) {
-		var object = new GameObject();
-		object.image_ = Resources.images[scenery[i].image];
-		object.drawPosition_.assignxy(scenery[i].x, scenery[i].y);
-		this.scenery.push(object);
-	}
+	this.rocks = [];
 
 	Keyboard.bind(this, this.onKeyChanged);
 
@@ -110,7 +97,27 @@ function Level(game) {
 		]
 	];
 
-	this.maps = [lineStrips1, lineStrips2, svg2json["lineStrips"]];
+	this.maps = [];
+	this.maps.push({ lineStrips: lineStrips1, scenery: [] });
+	this.maps.push({ lineStrips: lineStrips2, scenery: [] });
+	this.maps.push({ lineStrips: svg2json["lineStrips"], scenery: [] });
+
+	// scenery for map 3
+	var sceneryData = [
+		{ image: "tree-1", x: 664, y: 428, x0: 174, y0: 248, angle: 0 },
+		{ image: "tree-2", x: 110, y: 380, x0: 0, y0: 0, angle: 0 },
+		{ image: "tree-1", x: -326, y: 778, x0: 174, y0: 248, angle: 20 }
+	];
+
+	for (var i = 0; i < sceneryData.length; i++) {
+		var object = new GameObject();
+		object.image_ = Resources.images[sceneryData[i].image];
+		object.origin_.assignxy(sceneryData[i].x0, sceneryData[i].y0);
+		object.drawPosition_.assignxy(sceneryData[i].x, sceneryData[i].y);
+		object.drawRotation_ = sceneryData[i].angle * (Math.PI / 180);
+		this.maps[2].scenery.push(object);
+	}
+
 	this.setMap(this.maps[2]);
 	this.camera.setObjective(this.player2);
 	this.camera.moveToObjective();
@@ -150,12 +157,13 @@ Level.prototype.updateViewSize = function(size) {
 Level.prototype.setMap = function(map) {
 	this.world = null;
 
+	var lineStrips = map.lineStrips;
 	var line = new Line();
 	var rc = new Rectangle();
-	var bounds = new Rectangle(map[0][0].x, map[0][0].y, 0, 0);
+	var bounds = new Rectangle(lineStrips[0][0].x, lineStrips[0][0].y, 0, 0);
 	
-	for (var iStrip = 0; iStrip < map.length; iStrip++) {
-		var lineStrip = map[iStrip];
+	for (var iStrip = 0; iStrip < lineStrips.length; iStrip++) {
+		var lineStrip = lineStrips[iStrip];
 		var nLines = lineStrip.length;
 		for (var i = 0; i < nLines - 2; i++) {
 			line.assignp(lineStrip[i], lineStrip[i + 1]);
@@ -165,10 +173,63 @@ Level.prototype.setMap = function(map) {
 
 	this.world = new Physics.World(bounds);
 
-	for (var i = 0; i < map.length; i++)
-		this.world.addLineStrip(map[i]);
+	for (var i = 0; i < lineStrips.length; i++)
+		this.world.addLineStrip(lineStrips[i]);
 
-	this.lineStrips = map;
+	// place rocks
+	
+	this.rocks = [];
+
+	var vec = new Vector2();
+	var rockImage = Resources.images["rock"];
+	var maxRockSize = Math.max(rockImage.width, rockImage.height);
+	var minRockStep = rockImage.width * 0.4;
+	var maxRockStep = rockImage.width * 0.5;
+
+	for (var i = lineStrips.length - 1; i >= 0; i--) {
+		var lineStrip = lineStrips[i];
+		var len = lineStrip.length;
+
+		for (var j = 0; j < len - 1; j++) {
+			var vec = vec.assignv(lineStrip[j + 1]).subtractv(lineStrip[j]);
+			var magnitude = vec.magnitude();
+			var angle = vec.normalize().angle();
+			var edgeImageWidth = magnitude + 2 * maxRockSize;
+			var edgeImageHeight = 2 * maxRockSize;
+			var edgeImage = new RenderTarget();
+
+			edgeImage.create(edgeImageWidth, edgeImageHeight);
+
+			var ctx = edgeImage.getContext();
+			var prevPos = 0;
+
+			ctx.translate(maxRockSize, maxRockSize);
+
+			for (var pos = 0; pos < magnitude; pos += rand(minRockStep, maxRockStep)) {
+				var rot = rand(0, 2 * Math.PI);
+				ctx.translate(pos - prevPos, 0);
+				ctx.rotate(rot);
+				ctx.drawImage(rockImage, -rockImage.width / 2, -rockImage.height / 2, rockImage.width, rockImage.height);
+				ctx.rotate(-rot);
+
+				prevPos = pos;
+			}
+
+			this.rocks.push({
+				image: edgeImage.getCanvas(),
+				x: lineStrip[j].x,
+				y: lineStrip[j].y,
+				width: edgeImageWidth,
+				height: edgeImageHeight,
+				x0: maxRockSize,
+				y0: maxRockSize,
+				rotation: angle
+			});
+		}
+	}
+
+	this.lineStrips = lineStrips;
+	this.scenery = map.scenery;
 	this.player2.spawn(this.world, 200, 400);
 	this.camera.moveToObjective();
 }
@@ -241,12 +302,35 @@ Level.prototype.drawMap = function(context) {
 	var texture = this.textures["ground"][0];
 	var ground = context.createPattern(texture, "repeat");
 	
-	context.save();
-	context.fillStyle = "#000";
+	// scenery (trees)
 
 	for (var i = this.scenery.length - 1; i >= 0; i--) {
 		this.scenery[i].draw(context);
 	}
+
+	// rocks
+
+	context.save();
+
+	var prevX = 0;
+	var prevY = 0;
+
+	for (var i = this.rocks.length - 1; i >= 0; i--) {
+		var rock = this.rocks[i];
+		context.translate(rock.x - prevX, rock.y - prevY);
+		context.rotate(rock.rotation);
+		context.drawImage(rock.image, -rock.x0, -rock.y0, rock.width, rock.height);
+		context.rotate(-rock.rotation);
+		prevX = rock.x;
+		prevY = rock.y;
+	}
+
+	context.restore();
+
+	// polygons
+	
+	context.save();
+	context.fillStyle = "#000";
 
 	var lineStrip = this.lineStrips[0];
 	var len = lineStrip.length;
