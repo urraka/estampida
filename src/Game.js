@@ -39,7 +39,6 @@ Game.prototype.initialize = function() {
 			
 			self.level_ = new Level(self);
 			self.level_.updateViewSize(self.getRenderWindow().getLogicalSize());
-			self.level_.load();
 			self.setState(self.level_);
 		}
 	}
@@ -106,6 +105,21 @@ Game.prototype.initialize = function() {
 			{ left: 265, top: 0 }
 		]
 	};
+
+	// lights
+	
+	var context = this.getRenderWindow().getContext();
+	var frames = [];
+	var radius = 100;
+
+	for (var value = 80; value <= 130; value += 10) {
+		var gradient = context.createRadialGradient(0, 0, 0, 0, 0, radius);
+		gradient.addColorStop(0, "rgba(255, 255, 255, 0.8)");
+		gradient.addColorStop(1, "rgba(" + value + ", " + value + ", " + value + ", 0)");
+		frames.push(gradient);
+	}
+
+	Resources.lights["light-100"] = { "radius": radius, "frames": frames };
 }
 
 Game.prototype.windowResize = function(size) {
