@@ -26,6 +26,7 @@ Game.prototype.initialize = function() {
 		{ id: "christmas", src: "images/navidad.png" },
 		{ id: "tree-1", src: "images/tree-1.png" },
 		{ id: "tree-2", src: "images/tree-2.png" },
+		{ id: "tree-3", src: "images/tree-3.png" },
 		{ id: "rock", src: "images/rock.png" },
 		{ id: "light", src: "images/light.png" }
 	];
@@ -36,14 +37,14 @@ Game.prototype.initialize = function() {
 		if (++loadedCount === imagesInfo.length) {
 			Controller.initialize();
 			Controller.updateViewSize(size);
-			
+
 			self.level_ = new Level(self);
 			self.level_.updateViewSize(self.getRenderWindow().getLogicalSize());
 			self.setState(self.level_);
 		}
 	}
 
-	for (i in imagesInfo) {
+	for (var i in imagesInfo) {
 		var image = new Image();
 		image.onload = loadCheck;
 		image.src = imagesInfo[i].src + "?" + Date.now();
@@ -107,7 +108,7 @@ Game.prototype.initialize = function() {
 	};
 
 	// lights
-	
+
 	var context = this.getRenderWindow().getContext();
 	var frames = [];
 	var radius = 100;
@@ -120,7 +121,7 @@ Game.prototype.initialize = function() {
 	}
 
 	Resources.lights["light-100"] = { "radius": radius, "frames": frames };
-}
+};
 
 Game.prototype.windowResize = function(size) {
 	this.getRenderWindow().setLogicalSize(size);
@@ -130,4 +131,4 @@ Game.prototype.windowResize = function(size) {
 	}
 
 	Controller.updateViewSize(size);
-}
+};

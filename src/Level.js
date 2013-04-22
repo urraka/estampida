@@ -111,6 +111,7 @@ function Level(game) {
 		{ image: "tree-1", x: 1100, y: 1250, x0: 174, y0: 248, angle: 60 },
 		{ image: "tree-2", x: 110, y: 380, x0: 0, y0: 0, angle: 0 },
 		{ image: "tree-2", x: 1050, y: 560, x0: 97, y0: 210, angle: -135 },
+		{ image: "tree-3", x: 1380, y: 730, x0: 192, y0: 276, angle: -10 },
 
 		{ image: "tree-2", x: 0, y: -180, x0: 97, y0: 210, angle: 180 },
 		{ image: "tree-2", x: -100, y: -180, x0: 97, y0: 210, angle: 200 },
