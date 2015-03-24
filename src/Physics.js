@@ -528,7 +528,7 @@ Physics.World.prototype.draw = function(context, object) {
 				var bounds = quadTrees[i].root_.bounds_;
 
 				context.beginPath();
-	
+
 				if (this.bounds_.width > this.bounds_.height) {
 					context.moveTo(bounds.left + bounds.width, bounds.top);
 					context.lineTo(bounds.left + bounds.width, bounds.top + bounds.height);
@@ -537,7 +537,7 @@ Physics.World.prototype.draw = function(context, object) {
 					context.moveTo(bounds.left, bounds.top + bounds.height);
 					context.lineTo(bounds.left + bounds.width, bounds.top + bounds.height);
 				}
-	
+
 				context.stroke();
 			}
 		}

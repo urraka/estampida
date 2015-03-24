@@ -104,7 +104,7 @@ function Level(game) {
 	this.maps.push({ lineStrips: svg2json["lineStrips"], scenery: [], lights: [] });
 
 	// scenery for map 3
-	
+
 	var sceneryData = [
 		{ image: "tree-1", x: 664, y: 428, x0: 174, y0: 248, angle: 0 },
 		{ image: "tree-1", x: -326, y: 778, x0: 174, y0: 248, angle: 20 },
@@ -133,14 +133,14 @@ function Level(game) {
 	}
 
 	// lights for map 3
-	
+
 	this.maps[2].lights.push(new Light(1065, 185));
 	this.maps[2].lights.push(new Light(0, 730));
 
 	this.setMap(this.maps[2]);
 	this.camera.setObjective(this.player2);
 	this.camera.moveToObjective();
-	
+
 }
 
 Level.prototype.updateViewSize = function(size) {
@@ -159,7 +159,7 @@ Level.prototype.setMap = function(map) {
 	var line = new Line();
 	var rc = new Rectangle();
 	var bounds = new Rectangle(lineStrips[0][0].x, lineStrips[0][0].y, 0, 0);
-	
+
 	for (var iStrip = 0; iStrip < lineStrips.length; iStrip++) {
 		var lineStrip = lineStrips[iStrip];
 		var nLines = lineStrip.length;
@@ -175,7 +175,7 @@ Level.prototype.setMap = function(map) {
 		this.world.addLineStrip(lineStrips[i]);
 
 	// place rocks
-	
+
 	this.rocks = [];
 
 	var vec = new Vector2();
@@ -206,9 +206,11 @@ Level.prototype.setMap = function(map) {
 			for (var pos = 2; pos < magnitude - 2; pos += rand(minRockStep, maxRockStep)) {
 				var rot = rand(0, 2 * Math.PI);
 				ctx.translate(pos - prevPos, 0);
+				ctx.scale(1.5, 1.5);
 				ctx.rotate(rot);
 				ctx.drawImage(rockImage, -rockImage.width / 2, -rockImage.height / 2, rockImage.width, rockImage.height);
 				ctx.rotate(-rot);
+				ctx.scale(1/1.5, 1/1.5);
 
 				prevPos = pos;
 			}
@@ -315,34 +317,15 @@ Level.prototype.drawMap = function(context) {
 	for (var i = this.scenery.length - 1; i >= 0; i--)
 		this.scenery[i].draw(context);
 
-	// rocks
-
-	context.save();
-
-	var prevX = 0;
-	var prevY = 0;
-
-	for (var i = this.rocks.length - 1; i >= 0; i--) {
-		var rock = this.rocks[i];
-		context.translate(rock.x - prevX, rock.y - prevY);
-		context.rotate(rock.rotation);
-		context.drawImage(rock.image, -rock.x0, -rock.y0, rock.width, rock.height);
-		context.rotate(-rock.rotation);
-		prevX = rock.x;
-		prevY = rock.y;
-	}
-
-	context.restore();
-
 	// polygons
-	
+
 	context.save();
-	context.fillStyle = "#000";
+	context.fillStyle = "#FFF";
 
 	var lineStrip = this.lineStrips[0];
 	var len = lineStrip.length;
 	var size = Math.max(view.width / zoomFactor, view.height / zoomFactor);
-	
+
 	context.beginPath();
 	context.moveTo(lineStrip[0].x, lineStrip[0].y);
 
@@ -391,6 +374,25 @@ Level.prototype.drawMap = function(context) {
 
 		context.stroke();
 	}*/
+
+	context.restore();
+
+	// rocks
+
+	context.save();
+
+	var prevX = 0;
+	var prevY = 0;
+
+	for (var i = this.rocks.length - 1; i >= 0; i--) {
+		var rock = this.rocks[i];
+		context.translate(rock.x - prevX, rock.y - prevY);
+		context.rotate(rock.rotation);
+		context.drawImage(rock.image, -rock.x0, -rock.y0, rock.width, rock.height);
+		context.rotate(-rock.rotation);
+		prevX = rock.x;
+		prevY = rock.y;
+	}
 
 	context.restore();
 }

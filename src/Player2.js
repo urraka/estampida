@@ -98,6 +98,8 @@ Player2.prototype.update = function(dt) {
 		this.blinkingTime_ = 0;
 	}
 
+	this.blinking_ = false;
+
 	this.animation_.update(dt);
 	this.animation_.updateClipRect(this.clipRect_);
 }

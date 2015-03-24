@@ -27,7 +27,7 @@ Game.prototype.initialize = function() {
 		{ id: "tree-1", src: "images/tree-1.png" },
 		{ id: "tree-2", src: "images/tree-2.png" },
 		{ id: "tree-3", src: "images/tree-3.png" },
-		{ id: "rock", src: "images/rock.png" },
+		{ id: "rock", src: "images/rock2.png" },
 		{ id: "light", src: "images/light.png" }
 	];
 

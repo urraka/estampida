@@ -7,10 +7,10 @@ function GameBase() {
 
 	this.requestAnimationFrame =
 		window.requestAnimationFrame       ||
-		window.webkitRequestAnimationFrame || 
-		window.mozRequestAnimationFrame    || 
-		window.oRequestAnimationFrame      || 
-		window.msRequestAnimationFrame     || 
+		window.webkitRequestAnimationFrame ||
+		window.mozRequestAnimationFrame    ||
+		window.oRequestAnimationFrame      ||
+		window.msRequestAnimationFrame     ||
 		function(callback){ window.setTimeout(callback, 1); };
 }
 
@@ -18,7 +18,7 @@ GameBase.prototype.start = function(element) {
 	this.renderWindow_.create(element);
 
 	Keyboard.initialize();
-	
+
 	this.initialize();
 	this.mainLoop();
 }
